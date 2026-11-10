@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoForge 3D — Mô Phỏng Nhà Máy Sản Xuất Xe Hơi</title>
+  <meta name="description" content="Mô phỏng Digital Twin nhà máy sản xuất ô tô 3D thời gian thực bằng Three.js với phong cách Strategy Tycoon Game." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="canvas-container" aria-label="Khung nhìn 3D nhà máy sản xuất ô tô"></div>
+
+  <!-- Nhãn nổi 3D trên các đối tượng -->
+  <div id="labels-container"></div>
+
+  <!-- Thanh điều khiển & chỉ số trên cùng (Top Command Bar) -->
+  <header class="hud-top">
+    <div class="brand-block">
+      <div class="brand-logo">
+        <span class="pulse-dot"></span>
+        <h1>AUTOFORGE <span>3D</span></h1>
+      </div>
+      <span class="brand-sub">GIGAFACTORY DIGITAL TWIN // LINE-A1</span>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <span class="kpi-label">XE XUẤT XƯỞNG</span>
+        <div class="kpi-val-wrap">
+          <span id="kpi-produced" class="kpi-value">142</span>
+          <span class="kpi-unit">chiếc</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">ĐANG LẮP RÁP (WIP)</span>
+        <div class="kpi-val-wrap">
+          <span id="kpi-wip" class="kpi-value">6</span>
+          <span class="kpi-unit">xe</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">HIỆU SUẤT OEE</span>
+        <div class="kpi-val-wrap">
+          <span id="kpi-oee" class="kpi-value accent-emerald">96.4%</span>
+          <span id="kpi-takt" class="kpi-unit">Takt: 14s</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">ĐIỆN NĂNG TIÊU THỤ</span>
+        <div class="kpi-val-wrap">
+          <span id="kpi-power" class="kpi-value accent-amber">1,480</span>
+          <span class="kpi-unit">kW</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">DOANH THU LÔ</span>
+        <div class="kpi-val-wrap">
+          <span id="kpi-revenue" class="kpi-value accent-cyan">$6.39M</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-controls">
+      <div class="speed-group" role="group" aria-label="Tốc độ mô phỏng">
+        <button id="btn-pause" class="ctrl-btn" title="Tạm dừng / Tiếp tục">⏸</button>
+        <button id="btn-speed-1" class="ctrl-btn active" data-speed="1">1x</button>
+        <button id="btn-speed-2" class="ctrl-btn" data-speed="2">2x</button>
+        <button id="btn-speed-4" class="ctrl-btn" data-speed="4">4x</button>
+      </div>
+      <button id="btn-daynight" class="ctrl-btn mode-btn" title="Chuyển đổi Ca Ngày / Ca Đêm">🌙 Ca Đêm</button>
+    </div>
+  </header>
+
+  <!-- Sidebar Trái: Dây chuyền & Đội xe AGV & Nhật ký -->
+  <aside class="hud-left">
+    <section class="panel-box">
+      <div class="panel-header">
+        <h2>TRẠM DÂY CHUYỀN SẢN XUẤT</h2>
+        <span class="badge-live">TRỰC TIẾP</span>
+      </div>
+      <p class="panel-hint">Click vào trạm hoặc vật thể 3D để giám sát</p>
+      <div id="station-list" class="station-list"></div>
+    </section>
+
+    <section class="panel-box">
+      <div class="panel-header">
+        <h2>ĐỘI XE TỰ HÀNH AGV & LOGISTICS</h2>
+        <span id="agv-count-badge" class="badge-sub">4 Hoạt động</span>
+      </div>
+      <div id="agv-list" class="agv-list"></div>
+    </section>
+
+    <section class="panel-box log-panel">
+      <div class="panel-header">
+        <h2>NHẬT KÝ ĐIỀU HÀNH NHÀ MÁY</h2>
+      </div>
+      <div id="event-log" class="event-log"></div>
+    </section>
+  </aside>
+
+  <!-- Sidebar Phải: Chi tiết Đối tượng 3D (Inspector) & Đặt hàng xe mới -->
+  <aside class="hud-right">
+    <section id="inspector-panel" class="panel-box inspector-box">
+      <div class="panel-header">
+        <h2 id="insp-category">CHI TIẾT ĐỐI TƯỢNG 3D</h2>
+        <button id="btn-close-inspector" class="icon-btn" title="Bỏ chọn">✕</button>
+      </div>
+      <div id="inspector-content" class="inspector-content">
+        <!-- Render động khi click vào đối tượng 3D -->
+      </div>
+    </section>
+
+    <section class="panel-box">
+      <div class="panel-header">
+        <h2>LỆNH SẢN XUẤT XE MỚI</h2>
+      </div>
+      <div class="spawn-controls">
+        <div class="form-row">
+          <label for="select-model">Dòng xe:</label>
+          <select id="select-model">
+            <option value="CyberSUV">Apex CyberSUV (Gầm cao)</option>
+            <option value="AeroSedan">Veloce AeroSedan (Thể thao)</option>
+            <option value="HyperGT">Quantum HyperGT (Siêu xe điện)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Màu sơn:</label>
+          <div class="color-picker" id="color-picker">
+            <button class="color-swatch active" data-color="#f97316" data-name="Cam Năng Lượng" style="background:#f97316" title="Cam Năng Lượng"></button>
+            <button class="color-swatch" data-color="#0ea5e9" data-name="Xanh Cyber" style="background:#0ea5e9" title="Xanh Cyber"></button>
+            <button class="color-swatch" data-color="#10b981" data-name="Xanh Ngọc Lục" style="background:#10b981" title="Xanh Ngọc Lục"></button>
+            <button class="color-swatch" data-color="#ef4444" data-name="Đỏ Đua" style="background:#ef4444" title="Đỏ Đua"></button>
+            <button class="color-swatch" data-color="#eab308" data-name="Vàng Solar" style="background:#eab308" title="Vàng Solar"></button>
+            <button class="color-swatch" data-color="#e2e8f0" data-name="Bạc Titanium" style="background:#e2e8f0" title="Bạc Titanium"></button>
+          </div>
+        </div>
+        <button id="btn-spawn-car" class="primary-action-btn">+ ĐƯA KHUNG XE VÀO CHUYỀN</button>
+      </div>
+    </section>
+
+    <section class="panel-box">
+      <div class="panel-header">
+        <h2>KHO LINH KIỆN & BÃI XUẤT HÀNG</h2>
+      </div>
+      <div class="inventory-bars">
+        <div class="inv-item">
+          <div class="inv-top">
+            <span>Thép cuộn & Nhôm đúc</span>
+            <span id="inv-steel-txt">84%</span>
+          </div>
+          <div class="progress-track"><div id="inv-steel-bar" class="progress-fill fill-cyan" style="width: 84%"></div></div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-top">
+            <span>Pin Lithium & Động cơ điện</span>
+            <span id="inv-battery-txt">72%</span>
+          </div>
+          <div class="progress-track"><div id="inv-battery-bar" class="progress-fill fill-emerald" style="width: 72%"></div></div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-top">
+            <span>Vi mạch AI & Cảm biến LiDAR</span>
+            <span id="inv-chips-txt">91%</span>
+          </div>
+          <div class="progress-track"><div id="inv-chips-bar" class="progress-fill fill-amber" style="width: 91%"></div></div>
+        </div>
+      </div>
+      <div class="Button-row-sub">
+        <button id="btn-resupply" class="secondary-action-btn">📦 Gọi AGV Tiếp Liệu Kho</button>
+        <button id="btn-dispatch-truck" class="secondary-action-btn">🚛 Điều Xe Tải Xuất Hàng</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- Thanh điều hướng Camera góc nhìn dưới đáy (Bottom Camera Dock) -->
+  <footer class="hud-bottom">
+    <div class="cam-dock">
+      <span class="dock-label">CAMERA GÓC NHÌN:</span>
+      <button class="cam-btn active" data-cam="overview">🌐 Toàn Cảnh Nhà Máy</button>
+      <button class="cam-btn" data-cam="stamping">🔨 Trạm Dập & Hàn</button>
+      <button class="cam-btn" data-cam="paint">🎨 Buồng Sơn & Lắp Ráp</button>
+      <button class="cam-btn" data-cam="qc">🔬 Kiểm Định & Kho</button>
+      <button class="cam-btn" data-cam="followCar">🚗 Đi Theo Xe Trên Chuyền</button>
+      <button class="cam-btn" data-cam="followAGV">🤖 Đi Theo Robot AGV</button>
+      <button class="cam-btn" data-cam="topdown">📐 Bản Đồ 2.5D</button>
+    </div>
+    <div class="controls-help">
+      <span>🖱️ Chuột trái: Xoay / Click chọn 3D</span>
+      <span>•</span>
+      <span>🖱️ Chuột phải: Di chuyển (Pan)</span>
+      <span>•</span>
+      <span>⚙️ Cuộn: Thu phóng</span>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
