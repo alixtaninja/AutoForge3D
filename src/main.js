@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { preloadSimReadyModels } from './simreadyLoader.js';
 import {
   buildFactoryBuilding,
   buildPalletStack,
@@ -9,8 +10,10 @@ import {
   buildShippingContainer,
   buildSleekCar,
   buildAssemblyRobot,
+  buildSimReadyConveyorLine,
   buildStylizedTree,
-  buildExteriorStorageRack
+  buildExteriorStorageRack,
+  buildSimReadyFactoryProps
 } from './factoryBuilder.js';
 
 // ==========================================
@@ -190,14 +193,8 @@ function buildCampusGround() {
 }
 
 function buildInteriorAssemblyLine() {
-  // Băng chuyền lắp ráp ô tô chạy dọc bên trong tòa nhà máy (từ X = -18 đến X = +18, tại Z = -4.5)
-  const beltBase = new THREE.Mesh(
-    new THREE.BoxGeometry(37, 0.28, 3.1),
-    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.4 })
-  );
-  beltBase.position.set(0, 0.14, -4.5);
-  beltBase.receiveShadow = true;
-  scene.add(beltBase);
+  // Hệ thống băng chuyền lắp ráp ô tô sử dụng mô hình NVIDIA SimReady (`conveyor_belt_a05.glb`)
+  scene.add(buildSimReadyConveyorLine());
 
   // Viền xanh dương dọc băng chuyền
   [-1.45, 1.45].forEach((oz) => {
@@ -407,7 +404,10 @@ function buildExteriorYardObjects() {
   trucksList.push(truck3);
   selectableObjects.push(truck3);
 
-  // 7. Cây xanh Stylised tròn trịa xung quanh khuôn viên
+  // 7. Các thiết bị nhà xưởng phụ trợ NVIDIA SimReady (Pallet Jack, Rào chắn an toàn Dock, Thùng phuy công nghiệp)
+  scene.add(buildSimReadyFactoryProps());
+
+  // 8. Cây xanh Stylised tròn trịa xung quanh khuôn viên
   const treeCoords = [
     [6, -22, 1.1],
     [13, -24, 0.85],
@@ -649,10 +649,11 @@ function renderRightInspectorCard() {
   }
 
   const d = obj.userData;
+  const assetNote = d.simreadyAsset ? ` • SimReady: ${d.simreadyAsset}` : '';
   if (d.type === 'truck') {
     tagEl.textContent = `TRUCK • ${d.code}`;
     titleEl.textContent = d.name;
-    subEl.textContent = `Điểm đến: ${d.destination}`;
+    subEl.textContent = `Điểm đến: ${d.destination}${assetNote}`;
     badgeEl.textContent = d.state;
     badgeEl.className = `status-badge ${d.state === 'Loading' ? 'green' : 'blue'}`;
     sumEl.textContent = `Vị trí: ${d.bay} • Tiến độ: ${d.progressText}`;
@@ -663,7 +664,7 @@ function renderRightInspectorCard() {
   } else if (d.type === 'forklift') {
     tagEl.textContent = `FORKLIFT • ${d.id}`;
     titleEl.textContent = d.name;
-    subEl.textContent = `Người lái: ${d.operator}`;
+    subEl.textContent = `Người lái: ${d.operator}${assetNote}`;
     badgeEl.textContent = d.status;
     badgeEl.className = 'status-badge green';
     sumEl.textContent = d.taskDesc;
@@ -674,21 +675,21 @@ function renderRightInspectorCard() {
   } else if (d.type === 'car') {
     tagEl.textContent = `ASSEMBLY LINE • ${d.id}`;
     titleEl.textContent = `${d.model} (${d.colorName})`;
-    subEl.textContent = `Số khung VIN: ${d.vin}`;
+    subEl.textContent = `VIN: ${d.vin}${assetNote}`;
     badgeEl.textContent = `Hoàn thiện ${Math.round(d.progress)}%`;
     badgeEl.className = 'status-badge blue';
     sumEl.textContent = `Công đoạn ${d.stage + 1}/4 trên băng chuyền chính`;
   } else if (d.type === 'pallet' || d.type === 'rack' || d.type === 'container') {
     tagEl.textContent = `STORAGE • ${d.id}`;
     titleEl.textContent = d.name;
-    subEl.textContent = 'Khu vực lưu trữ & tập kết vật tư';
+    subEl.textContent = `Lưu trữ & tập kết vật tư${assetNote}`;
     badgeEl.textContent = d.status || 'In Stock';
     badgeEl.className = 'status-badge green';
     sumEl.textContent = d.contents || `${d.units || 144} đơn vị linh kiện sẵn sàng`;
   } else if (d.type === 'robot') {
     tagEl.textContent = `ROBOTICS • ${d.id}`;
     titleEl.textContent = d.name;
-    subEl.textContent = 'Cánh tay Robot KUKA 6 trục tự động';
+    subEl.textContent = `Robot tự động${assetNote}`;
     badgeEl.textContent = 'Operational';
     badgeEl.className = 'status-badge green';
     sumEl.textContent = `Đã hoàn thành ${d.cycles.toLocaleString()} chu kỳ lắp ráp`;
@@ -939,14 +940,25 @@ function setupUIEvents() {
 }
 
 // ==========================================
-// 9. KHỞI CHẠY ỨNG DỤNG
+// 9. KHỞI CHẠY ỨNG DỤNG (TẢI TRƯỚC 20 MÔ HÌNH NVIDIA SIMREADY GLB)
 // ==========================================
 buildCampusGround();
-buildInteriorAssemblyLine();
-buildExteriorYardObjects();
 setupUIEvents();
-renderRightInspectorCard();
-renderBottomTabs();
+
+const navMetaEl = document.getElementById('nav-site-meta');
+preloadSimReadyModels((loaded, total) => {
+  if (navMetaEl) {
+    navMetaEl.textContent = `Đang nạp NVIDIA SimReady GLB (${loaded}/${total})...`;
+  }
+}).then(() => {
+  if (navMetaEl) {
+    navMetaEl.textContent = '20/20 NVIDIA SimReady GLB • 2/3 bến đang bốc hàng';
+  }
+  buildInteriorAssemblyLine();
+  buildExteriorYardObjects();
+  renderRightInspectorCard();
+  renderBottomTabs();
+});
 
 const clock = new THREE.Clock();
 

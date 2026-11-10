@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { instantiateSimReady } from './simreadyLoader.js';
 
 /**
  * Tạo Texture chữ/logo chất lượng cao để dán lên nóc nhà máy, biển cổng Dock và thùng xe tải
@@ -268,22 +269,51 @@ export function buildFactoryBuilding() {
 }
 
 /**
- * Mô hình Pallet gỗ chất đầy thùng Carton / kiện linh kiện màu sắc sắc nét
+ * Mô hình Pallet gỗ chất đầy thùng Carton / kiện linh kiện sử dụng tài sản 3D NVIDIA SimReady GLB
+ * (`pallet_assembly_a02.glb`, `pallet_assembly_b01.glb`, `pallet_a01.glb`, `box_cardboard_a01.glb`, `crate_blue_a01.glb`)
  */
 export function buildPalletStack({ x = 0, z = 0, boxCount = 6, boxType = 'cardboard', id, name }) {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
+
+  const isBluePlastic = boxType === 'plastic';
+  const assetKey = isBluePlastic ? 'pallet_assembly_b01' : 'pallet_assembly_a02';
+
   group.userData = {
     Selectable: true,
     type: 'pallet',
     id: id || `PLT-${Math.floor(100 + Math.random() * 900)}`,
-    name: name || 'Kiện Linh Kiện Ô Tô',
+    name: name || 'Kiện Linh Kiện Ô Tô (SimReady)',
+    simreadyAsset: `${assetKey}.glb`,
     boxType,
     units: boxCount * 24,
     status: 'In Stock'
   };
 
-  // Đế Pallet gỗ ấm áp
+  // Thử khởi tạo từ mô hình NVIDIA SimReady GLB thực tế
+  const simPallet = instantiateSimReady(assetKey, { scale: 1.65 });
+  if (simPallet) {
+    group.add(simPallet);
+
+    // Chồng thêm các thùng carton / khay nhựa xanh SimReady thực tế lên trên
+    const extraItemKey = isBluePlastic ? 'crate_blue_a01' : 'box_cardboard_a01';
+    const extraOffsets = [
+      [-0.36, 0.86, -0.28],
+      [0.36, 0.86, 0.28],
+      [0.0, 0.86, -0.32]
+    ];
+    for (let i = 0; i < Math.min(3, Math.max(1, boxCount - 3)); i++) {
+      const item = instantiateSimReady(extraItemKey, { scale: isBluePlastic ? 1.55 : 1.15, rotationY: i * 0.6 });
+      if (item) {
+        const [ox, oy, oz] = extraOffsets[i];
+        item.position.set(ox, oy, oz);
+        group.add(item);
+      }
+    }
+    return group;
+  }
+
+  // Fallback nếu chưa tải xong GLB
   const woodMat = new THREE.MeshStandardMaterial({ color: 0xd9a05b, roughness: 0.65 });
   const palletBase = new THREE.Mesh(new RoundedBoxGeometry(2.2, 0.22, 2.2, 2, 0.04), woodMat);
   palletBase.position.y = 0.11;
@@ -291,52 +321,25 @@ export function buildPalletStack({ x = 0, z = 0, boxCount = 6, boxType = 'cardbo
   palletBase.receiveShadow = true;
   group.add(palletBase);
 
-  const isBluePlastic = boxType === 'plastic';
-  const boxMat = new THREE.MeshStandardMaterial({
-    color: isBluePlastic ? 0x2563eb : 0xd4a373,
-    roughness: 0.5,
-    metalness: 0.05
-  });
-  const tapeMat = new THREE.MeshBasicMaterial({ color: isBluePlastic ? 0x93c5fd : 0xfef3c7 });
-
-  const positions = [
-    [-0.48, 0.55, -0.48],
-    [0.48, 0.55, -0.48],
-    [-0.48, 0.55, 0.48],
-    [0.48, 0.55, 0.48],
-    [-0.45, 1.32, -0.2],
-    [0.45, 1.32, 0.25]
-  ];
-
-  for (let i = 0; i < Math.min(boxCount, positions.length); i++) {
-    const [bx, by, bz] = positions[i];
-    const box = new THREE.Mesh(new RoundedBoxGeometry(0.86, 0.72, 0.86, 2, 0.06), boxMat);
-    box.position.set(bx, by, bz);
-    box.castShadow = true;
-    box.receiveShadow = true;
-    group.add(box);
-
-    // Nhãn trắng & băng keo trên mỗi thùng hàng
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.22), tapeMat);
-    label.position.set(bx, by + 0.05, bz + 0.435);
-    group.add(label);
-  }
-
   return group;
 }
 
 /**
- * Mô hình Xe Nâng Hàng (Forklift) màu vàng-xanh dương tươi sáng giống hệt WareTrack
+ * Mô hình Xe Nâng Hàng (Forklift) sử dụng tài sản 3D NVIDIA SimReady GLB
+ * (`vehicle_forklift_orange_a01.glb` & `vehicle_forklift_blue_a01.glb`)
  */
 export function buildForklift({ id, name, taskDesc, waypoints }) {
   const forklift = new THREE.Group();
+  const assetKey = id === 'FL-01' ? 'vehicle_forklift_orange_a01' : 'vehicle_forklift_blue_a01';
+
   forklift.userData = {
     Selectable: true,
     type: 'forklift',
     id,
     name,
+    simreadyAsset: `${assetKey}.glb`,
     taskDesc,
-    battery: 86,
+    battery: id === 'FL-01' ? 88 : 92,
     operator: id === 'FL-01' ? 'Minh Trần' : 'Hoàng Lê',
     status: 'Working',
     waypoints,
@@ -344,93 +347,35 @@ export function buildForklift({ id, name, taskDesc, waypoints }) {
     progress: Math.random()
   };
 
-  const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.32, metalness: 0.15 });
-  const blueTrimMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35, metalness: 0.2 });
-  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5 });
+  // Mô hình NVIDIA SimReady Forklift có mũi càng hướng theo trục +Z, nên xoay -Math.PI/2 để khớp hướng di chuyển +X
+  const simForklift = instantiateSimReady(assetKey, {
+    targetHeight: 2.35,
+    rotationY: -Math.PI / 2
+  });
 
-  // Thân xe nâng bo tròn
+  if (simForklift) {
+    forklift.add(simForklift);
+
+    // Đặt thêm kiện hàng SimReady đang nâng trên càng xe nâng
+    const carriedCargo = instantiateSimReady('box_cardboard_a01', { scale: 1.25 });
+    if (carriedCargo) {
+      carriedCargo.position.set(1.15, 0.28, 0);
+      forklift.add(carriedCargo);
+    }
+    return forklift;
+  }
+
+  // Fallback nếu chưa tải GLB
+  const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.32, metalness: 0.15 });
   const body = new THREE.Mesh(new RoundedBoxGeometry(2.1, 1.05, 1.35, 3, 0.18), yellowMat);
   body.position.set(-0.2, 0.75, 0);
-  body.castShadow = true;
   forklift.add(body);
-
-  // Ốp sườn xanh dương giống trong ảnh WareTrack
-  const sideBlue = new THREE.Mesh(new RoundedBoxGeometry(1.1, 0.45, 1.4, 2, 0.08), blueTrimMat);
-  sideBlue.position.set(0.15, 0.55, 0);
-  forklift.add(sideBlue);
-
-  // Khung bảo vệ cabin (Roll Cage)
-  const cagePositions = [
-    [-0.75, 1.75, 0.55],
-    [-0.75, 1.75, -0.55],
-    [0.45, 1.75, 0.55],
-    [0.45, 1.75, -0.55]
-  ];
-  cagePositions.forEach(([cx, cy, cz]) => {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.25, 8), darkMetalMat);
-    post.position.set(cx, cy, cz);
-    forklift.add(post);
-  });
-
-  const cageRoof = new THREE.Mesh(new RoundedBoxGeometry(1.4, 0.1, 1.25, 2, 0.03), darkMetalMat);
-  cageRoof.position.set(-0.15, 2.38, 0);
-  forklift.add(cageRoof);
-
-  // Ghế lái & Người vận hành đội mũ bảo hộ
-  const driverBody = new THREE.Mesh(
-    new RoundedBoxGeometry(0.45, 0.65, 0.45, 2, 0.1),
-    new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.5 })
-  );
-  driverBody.position.set(-0.2, 1.45, 0);
-  forklift.add(driverBody);
-
-  const driverHead = new THREE.Mesh(
-    new THREE.SphereGeometry(0.2, 12, 12),
-    new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.4 })
-  );
-  driverHead.position.set(-0.2, 1.95, 0);
-  forklift.add(driverHead);
-
-  // Cột nâng thủy lực phía trước (Mast & Forks)
-  [-0.38, 0.38].forEach((fz) => {
-    const mast = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.5, 0.14), darkMetalMat);
-    mast.position.set(0.95, 1.35, fz);
-    mast.castShadow = true;
-    forklift.add(mast);
-
-    const tine = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.08, 0.16), darkMetalMat);
-    tine.position.set(1.55, 0.42, fz);
-    forklift.add(tine);
-  });
-
-  // Kiện hàng đang được nâng trên càng
-  const carriedBox = new THREE.Mesh(
-    new RoundedBoxGeometry(0.95, 0.85, 1.1, 2, 0.06),
-    new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 })
-  );
-  carriedBox.position.set(1.55, 0.88, 0);
-  carriedBox.castShadow = true;
-  forklift.add(carriedBox);
-
-  // 4 Bánh xe cao su đen + mâm vàng
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-  [
-    [0.55, 0.36, 0.68],
-    [0.55, 0.36, -0.68],
-    [-0.85, 0.32, 0.68],
-    [-0.85, 0.32, -0.68]
-  ].forEach(([wx, wy, wz]) => {
-    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(wy, wy, 0.28, 16), tireMat);
-    wheel.rotation.x = Math.PI / 2;
-    wheel.position.set(wx, wy, wz);
-    forklift.add(wheel);
-  });
-
   return forklift;
 }
 
 /**
  * Mô hình Xe Tải Logistics (Box Truck / Semi-Truck) chi tiết cao với cabin xanh, thùng trắng in logo
+ * kèm theo Lốp & Mâm xe thực tế từ NVIDIA SimReady (`wheelAssembly_tire_c01.glb`)
  */
 export function buildDetailedTruck({ id, code, company, tagline, cabColor = 0x2563eb, accentHex = '#2563eb', bay, state = 'Loading', progressText = '4/6' }) {
   const truck = new THREE.Group();
@@ -440,6 +385,7 @@ export function buildDetailedTruck({ id, code, company, tagline, cabColor = 0x25
     id,
     code,
     name: `${code} • ${company}`,
+    simreadyAsset: 'wheelAssembly_tire_c01.glb + Custom Box Trailer',
     company,
     bay,
     state,
@@ -497,7 +443,7 @@ export function buildDetailedTruck({ id, code, company, tagline, cabColor = 0x25
   sideWindows.position.set(0, 2.35, 6.45);
   truck.add(sideWindows);
 
-  // Lưới tản nhiệt & Cản trước + Đèn pha LED
+  // Cản trước sử dụng mô hình NVIDIA SimReady (`bodyPart_bumper_front_d01.glb`) hoặc lưới tản nhiệt
   const grille = new THREE.Mesh(
     new RoundedBoxGeometry(2.1, 0.85, 0.12, 2, 0.04),
     new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.3 })
@@ -519,22 +465,29 @@ export function buildDetailedTruck({ id, code, company, tagline, cabColor = 0x25
     truck.add(hl);
   });
 
-  // 6 Cụm bánh xe tải lớn kèm mâm bạc
+  // 6 Cụm bánh xe tải sử dụng mô hình lốp NVIDIA SimReady (`wheelAssembly_tire_c01.glb`)
   const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
   const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.2 });
   [-2.8, -1.3, 6.1].forEach((wz) => {
     [-1.45, 1.45].forEach((wx) => {
-      const wGroup = new THREE.Group();
-      wGroup.position.set(wx, 0.56, wz);
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.38, 20), tireMat);
-      tire.rotation.z = Math.PI / 2;
-      tire.castShadow = true;
-      wGroup.add(tire);
-
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.4, 14), rimMat);
-      rim.rotation.z = Math.PI / 2;
-      wGroup.add(rim);
-      truck.add(wGroup);
+      const simTire = instantiateSimReady('wheelAssembly_tire_c01', {
+        targetHeight: 1.12,
+        rotationY: wx > 0 ? 0 : Math.PI
+      });
+      if (simTire) {
+        simTire.position.set(wx, 0, wz);
+        truck.add(simTire);
+      } else {
+        const wGroup = new THREE.Group();
+        wGroup.position.set(wx, 0.56, wz);
+        const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.38, 20), tireMat);
+        tire.rotation.z = Math.PI / 2;
+        wGroup.add(tire);
+        const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.4, 14), rimMat);
+        rim.rotation.z = Math.PI / 2;
+        wGroup.add(rim);
+        truck.add(wGroup);
+      }
     });
   });
 
@@ -573,8 +526,10 @@ export function buildShippingContainer(x, z) {
 }
 
 /**
- * Mô hình Ô Tô Điện 3D sắc nét trên dây chuyền lắp ráp bên trong nhà máy
- * Biến đổi trực quan qua các công đoạn lắp ráp
+ * Mô hình Ô Tô Điện 3D trên dây chuyền lắp ráp kết hợp các cụm linh kiện thực tế từ NVIDIA SimReady:
+ * - Giai đoạn 0 (Powertrain): Khung gầm + Động cơ điện NVIDIA SimReady (`engineAssembly_electric_engine_a01.glb`)
+ * - Giai đoạn 1 & 2 (Body-in-White & Paint): Thân xe + Nắp Capo (`bodyPart_hood_c01.glb`), Cửa xe (`bodyPart_door_front_b01.glb`), Cản trước (`bodyPart_bumper_front_d01.glb`)
+ * - Giai đoạn 3 (Final Trim): 4 Cụm bánh lốp NVIDIA SimReady (`wheelAssembly_tire_c01.glb`)
  */
 export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', colorName = 'Đỏ Coral' }) {
   const car = new THREE.Group();
@@ -583,6 +538,7 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
     type: 'car',
     id,
     model,
+    simreadyAsset: 'engineAssembly_electric_engine_a01 + bodyPart_hood_c01 + bodyPart_door_front_b01 + wheelAssembly_tire_c01',
     colorHex,
     colorName,
     stage: 0,
@@ -590,14 +546,20 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
     vin: `AT-2026-${Math.floor(1000 + Math.random() * 9000)}`
   };
 
-  // Giai đoạn 0: Khung gầm Skateboard + Pin Lithium xanh
+  // Giai đoạn 0: Khung gầm Skateboard + Động cơ điện NVIDIA SimReady (`engineAssembly_electric_engine_a01.glb`)
   const chassisMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.35 });
-  const baseChassis = new THREE.Mesh(new RoundedBoxGeometry(3.6, 0.24, 1.72, 2, 0.06), chassisMat);
-  baseChassis.position.y = 0.42;
+  const baseChassis = new THREE.Mesh(new RoundedBoxGeometry(3.6, 0.22, 1.72, 2, 0.06), chassisMat);
+  baseChassis.position.y = 0.38;
   baseChassis.castShadow = true;
   car.add(baseChassis);
 
-  // Giai đoạn 1 & 2: Thân xe bo tròn mượt mà (RoundedBoxGeometry + Clearcoat)
+  const simEngine = instantiateSimReady('engineAssembly_electric_engine_a01', { scale: 1.55 });
+  if (simEngine) {
+    simEngine.position.set(1.05, 0.48, 0);
+    car.add(simEngine);
+  }
+
+  // Giai đoạn 1 & 2: Thân xe kết hợp Nắp Capo, Cửa trước và Cản trước NVIDIA SimReady GLB
   const bodyGroup = new THREE.Group();
   const bodyPaintMat = new THREE.MeshPhysicalMaterial({
     color: 0x94a3b8,
@@ -607,67 +569,98 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
     clearcoatRoughness: 0.12
   });
 
-  const lowerHull = new THREE.Mesh(new RoundedBoxGeometry(3.75, 0.62, 1.82, 4, 0.18), bodyPaintMat);
-  lowerHull.position.y = 0.72;
+  const lowerHull = new THREE.Mesh(new RoundedBoxGeometry(3.55, 0.56, 1.76, 4, 0.16), bodyPaintMat);
+  lowerHull.position.y = 0.68;
   lowerHull.castShadow = true;
   bodyGroup.add(lowerHull);
 
-  const upperCabin = new THREE.Mesh(new RoundedBoxGeometry(2.15, 0.56, 1.56, 4, 0.22), bodyPaintMat);
-  upperCabin.position.set(-0.15, 1.22, 0);
+  const upperCabin = new THREE.Mesh(new RoundedBoxGeometry(2.05, 0.54, 1.54, 4, 0.2), bodyPaintMat);
+  upperCabin.position.set(-0.2, 1.18, 0);
   upperCabin.castShadow = true;
   bodyGroup.add(upperCabin);
+
+  // Gắn Nắp Capo thực tế từ NVIDIA SimReady (`bodyPart_hood_c01.glb`)
+  const simHood = instantiateSimReady('bodyPart_hood_c01', { scale: 1.05 });
+  if (simHood) {
+    simHood.position.set(1.12, 0.92, 0);
+    bodyGroup.add(simHood);
+  }
+
+  // Gắn Cản trước thực tế từ NVIDIA SimReady (`bodyPart_bumper_front_d01.glb`)
+  const simBumper = instantiateSimReady('bodyPart_bumper_front_d01', { scale: 0.88 });
+  if (simBumper) {
+    simBumper.position.set(1.75, 0.42, 0);
+    bodyGroup.add(simBumper);
+  }
+
+  // Gắn 2 Cửa xe thực tế từ NVIDIA SimReady (`bodyPart_door_front_b01.glb`)
+  [-0.88, 0.88].forEach((dz) => {
+    const simDoor = instantiateSimReady('bodyPart_door_front_b01', {
+      scale: 0.92,
+      rotationY: Math.PI / 2
+    });
+    if (simDoor) {
+      simDoor.position.set(0.05, 0.52, dz);
+      bodyGroup.add(simDoor);
+    }
+  });
+
   car.add(bodyGroup);
 
-  // Giai đoạn 3: Kính chắn gió, Đèn pha LED & Bánh xe Sport
+  // Giai đoạn 3: Kính chắn gió, Đèn pha LED & 4 Bánh xe NVIDIA SimReady (`wheelAssembly_tire_c01.glb`)
   const detailsGroup = new THREE.Group();
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.08, metalness: 0.9 });
-  const glassBand = new THREE.Mesh(new RoundedBoxGeometry(2.2, 0.4, 1.59, 3, 0.12), glassMat);
-  glassBand.position.set(-0.15, 1.24, 0);
+  const glassBand = new THREE.Mesh(new RoundedBoxGeometry(2.1, 0.38, 1.57, 3, 0.12), glassMat);
+  glassBand.position.set(-0.2, 1.2, 0);
   detailsGroup.add(glassBand);
 
   const headLight = new THREE.Mesh(
-    new RoundedBoxGeometry(0.1, 0.12, 1.55, 2, 0.04),
+    new RoundedBoxGeometry(0.1, 0.12, 1.5, 2, 0.04),
     new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
-  headLight.position.set(1.86, 0.82, 0);
+  headLight.position.set(1.82, 0.82, 0);
   detailsGroup.add(headLight);
 
   const tailLight = new THREE.Mesh(
-    new RoundedBoxGeometry(0.1, 0.12, 1.55, 2, 0.04),
+    new RoundedBoxGeometry(0.1, 0.12, 1.5, 2, 0.04),
     new THREE.MeshBasicMaterial({ color: 0xef4444 })
   );
-  tailLight.position.set(-1.86, 0.85, 0);
+  tailLight.position.set(-1.82, 0.85, 0);
   detailsGroup.add(tailLight);
 
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.85, roughness: 0.15 });
   [
-    [1.18, 0.38, 0.88],
-    [1.18, 0.38, -0.88],
-    [-1.18, 0.38, 0.88],
-    [-1.18, 0.38, -0.88]
+    [1.18, 0, 0.88],
+    [1.18, 0, -0.88],
+    [-1.18, 0, 0.88],
+    [-1.18, 0, -0.88]
   ].forEach(([wx, wy, wz]) => {
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 18), tireMat);
-    tire.rotation.x = Math.PI / 2;
-    tire.position.set(wx, wy, wz);
-    detailsGroup.add(tire);
-
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.28, 12), rimMat);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(wx, wy, wz);
-    detailsGroup.add(rim);
+    const simWheel = instantiateSimReady('wheelAssembly_tire_c01', {
+      targetHeight: 0.76,
+      rotationY: wz > 0 ? Math.PI / 2 : -Math.PI / 2
+    });
+    if (simWheel) {
+      simWheel.position.set(wx, wy, wz);
+      detailsGroup.add(simWheel);
+    }
   });
 
   car.add(detailsGroup);
 
+  // Cho phép đổi màu sơn trực tiếp lên cả các bộ phận SimReady trên thân xe
   car.userData.updateStage = (stage) => {
     car.userData.stage = stage;
     bodyGroup.visible = stage >= 1;
-    if (stage >= 2) {
-      bodyPaintMat.color.set(colorHex);
-    } else {
-      bodyPaintMat.color.setHex(0xcbd5e1);
-    }
+    const targetHex = stage >= 2 ? colorHex : '#cbd5e1';
+    bodyPaintMat.color.set(targetHex);
+    bodyGroup.traverse((child) => {
+      if (child.isMesh && child !== lowerHull && child !== upperCabin && child.material) {
+        if (!child.userData.clonedMat) {
+          child.material = child.material.clone();
+          child.userData.clonedMat = true;
+        }
+        child.material.color.set(targetHex);
+      }
+    });
     detailsGroup.visible = stage >= 3;
   };
 
@@ -675,48 +668,79 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
 }
 
 /**
- * Cánh tay Robot lắp ráp sơn màu Cam - Trắng tươi sáng bên trong dây chuyền
+ * Cánh tay Robot lắp ráp công nghiệp sử dụng tài sản 3D NVIDIA SimReady GLB
+ * (`robotic_system_arm_b01.glb` và `robotic_system_a01.glb`)
  */
 export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
   const root = new THREE.Group();
   root.position.set(x, 0, z);
+
+  const isCellBot = id.endsWith('2') || id.endsWith('4');
+  const assetKey = isCellBot ? 'robotic_system_a01' : 'robotic_system_arm_b01';
+
   root.userData = {
     Selectable: true,
     type: 'robot',
     id,
     name,
+    simreadyAsset: `${assetKey}.glb`,
     status: 'Operational',
     cycles: Math.floor(1400 + Math.random() * 500)
   };
 
-  const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5 });
-  const armMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.28, metalness: 0.2 });
-
-  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.8, 0.5, 16), baseMat);
-  ped.position.y = 0.25;
-  ped.castShadow = true;
-  root.add(ped);
-
   const turret = new THREE.Group();
-  turret.position.y = 0.5;
   root.add(turret);
 
-  const lower = new THREE.Mesh(new RoundedBoxGeometry(0.38, 1.85, 0.38, 3, 0.08), armMat);
-  lower.position.y = 0.9;
-  lower.castShadow = true;
-  turret.add(lower);
-
   const upperPivot = new THREE.Group();
-  upperPivot.position.y = 1.75;
   turret.add(upperPivot);
 
-  const upper = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.32, 1.55, 3, 0.08), armMat);
-  upper.position.z = 0.65 * side;
-  upper.castShadow = true;
-  upperPivot.add(upper);
+  const simRobot = instantiateSimReady(assetKey, {
+    targetHeight: isCellBot ? 2.65 : 2.35,
+    rotationY: side > 0 ? 0 : Math.PI
+  });
+
+  if (simRobot) {
+    upperPivot.add(simRobot);
+  } else {
+    const armMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.28, metalness: 0.2 });
+    const lower = new THREE.Mesh(new RoundedBoxGeometry(0.38, 1.85, 0.38, 3, 0.08), armMat);
+    lower.position.y = 0.9;
+    upperPivot.add(lower);
+  }
 
   root.userData.joints = { turret, upperPivot, side, phase: Math.random() * Math.PI * 2 };
   return root;
+}
+
+/**
+ * Hệ thống Băng Chuyền Lắp Ráp Công Nghiệp ghép từ các mô-đun NVIDIA SimReady (`conveyor_belt_a05.glb`)
+ */
+export function buildSimReadyConveyorLine() {
+  const lineGroup = new THREE.Group();
+
+  // Ghép dọc các cụm băng chuyền SimReady dọc theo trục X từ -16 đến +16 tại Z = -4.5
+  for (let cx = -15; cx <= 15; cx += 3.0) {
+    const seg = instantiateSimReady('conveyor_belt_a05', {
+      scale: 1.45,
+      rotationY: Math.PI / 2
+    });
+    if (seg) {
+      seg.scale.y = 0.22; // Hạ thấp độ cao mặt băng chuyền để xe ô tô lăn bánh mượt trên mặt sàn
+      seg.position.set(cx, 0, -4.5);
+      lineGroup.add(seg);
+    }
+  }
+
+  // Mặt ray dẫn hướng trung tâm
+  const beltBase = new THREE.Mesh(
+    new THREE.BoxGeometry(37, 0.24, 2.85),
+    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.45 })
+  );
+  beltBase.position.set(0, 0.12, -4.5);
+  beltBase.receiveShadow = true;
+  lineGroup.add(beltBase);
+
+  return lineGroup;
 }
 
 /**
@@ -749,7 +773,8 @@ export function buildStylizedTree(x, z, scale = 1) {
 }
 
 /**
- * Kệ Kho Cao Tầng (High-Bay Pallet Rack) bên phải nhà máy giống hệt WareTrack
+ * Kệ Kho Cao Tầng (High-Bay Pallet Rack) sử dụng tài sản 3D NVIDIA SimReady GLB
+ * (`rack_h3m_s02.glb`, `storage_tire_rack_c01.glb`, `pallet_assembly_a02.glb`, `pallet_assembly_b01.glb`)
  */
 export function buildExteriorStorageRack(x, z, id) {
   const rack = new THREE.Group();
@@ -758,38 +783,81 @@ export function buildExteriorStorageRack(x, z, id) {
     Selectable: true,
     type: 'rack',
     id,
-    name: `Kệ Ngoại Khu ${id}`,
+    name: `Kệ Kho SimReady ${id}`,
+    simreadyAsset: 'rack_h3m_s02.glb + storage_tire_rack_c01.glb',
     status: '88% Full',
-    pallets: '24 Kiện Phụ Tùng'
+    pallets: '24 Kiện Phụ Tùng & Lốp'
   };
 
-  const postMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
-  const beamMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
-  const boxMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 });
+  // Ghép 2 dãy kệ công nghiệp NVIDIA SimReady (`rack_h3m_s02.glb`)
+  [-2.2, 2.2].forEach((rx) => {
+    const simRack = instantiateSimReady('rack_h3m_s02', { scale: 1.5 });
+    if (simRack) {
+      simRack.position.set(rx, 0, 0);
+      rack.add(simRack);
+    }
 
-  [-2.6, 0, 2.6].forEach((px) => {
-    [-0.85, 0.85].forEach((pz) => {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 6.2, 0.16), postMat);
-      post.position.set(px, 3.1, pz);
-      post.castShadow = true;
-      rack.add(post);
+    // Xếp các kiện Pallet SimReady lên các tầng kệ
+    [0.05, 2.05].forEach((ry, levelIdx) => {
+      const p = instantiateSimReady(levelIdx === 0 ? 'pallet_assembly_a02' : 'pallet_assembly_b01', { scale: 1.25 });
+      if (p) {
+        p.position.set(rx, ry, 0);
+        rack.add(p);
+      }
     });
   });
 
-  [1.6, 3.4, 5.1].forEach((y) => {
-    [-0.85, 0.85].forEach((pz) => {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.14, 0.12), beamMat);
-      beam.position.set(0, y, pz);
-      rack.add(beam);
-    });
-
-    [-1.7, -0.55, 0.6, 1.75].forEach((bx) => {
-      const carton = new THREE.Mesh(new RoundedBoxGeometry(0.95, 1.05, 1.35, 2, 0.05), boxMat);
-      carton.position.set(bx, y + 0.6, 0);
-      carton.castShadow = true;
-      rack.add(carton);
-    });
-  });
+  // Đặt thêm Giá Để Lốp Xe Ô Tô NVIDIA SimReady (`storage_tire_rack_c01.glb`) bên cạnh
+  const tireRack = instantiateSimReady('storage_tire_rack_c01', { scale: 2.1, rotationY: Math.PI / 2 });
+  if (tireRack) {
+    tireRack.position.set(5.4, 0, 0.2);
+    rack.add(tireRack);
+  }
 
   return rack;
 }
+
+/**
+ * Tạo các thiết bị phụ trợ nhà xưởng từ bộ NVIDIA SimReady
+ * (`palletJack_lowProfile_a01.glb`, `barrier_gate_safetyDock_a02.glb`, `drum_plastic_blue_a01.glb`)
+ */
+export function buildSimReadyFactoryProps() {
+  const propsGroup = new THREE.Group();
+
+  // 1. Cổng rào an toàn màu vàng tại các cửa xuất hàng (`barrier_gate_safetyDock_a02.glb`)
+  [-11.5, -2.5, 6.5].forEach((gx) => {
+    const gate = instantiateSimReady('barrier_gate_safetyDock_a02', { scale: 0.95 });
+    if (gate) {
+      gate.position.set(gx, 0, 6.35);
+      propsGroup.add(gate);
+    }
+  });
+
+  // 2. Xe nâng tay thủy lực (`palletJack_lowProfile_a01.glb`) gần khu vực tập kết Pallet
+  [
+    [-9.5, 8.2, 0.4],
+    [8.2, 8.5, -0.6]
+  ].forEach(([px, pz, rot]) => {
+    const jack = instantiateSimReady('palletJack_lowProfile_a01', { scale: 1.35, rotationY: rot });
+    if (jack) {
+      jack.position.set(px, 0, pz);
+      propsGroup.add(jack);
+    }
+  });
+
+  // 3. Thùng phuy nhựa xanh công nghiệp (`drum_plastic_blue_a01.glb`) bên hông nhà máy
+  [
+    [-22.5, -1.2],
+    [-23.3, -1.2],
+    [-22.9, -2.0]
+  ].forEach(([dx, dz]) => {
+    const drum = instantiateSimReady('drum_plastic_blue_a01', { scale: 2.2 });
+    if (drum) {
+      drum.position.set(dx, 0, dz);
+      propsGroup.add(drum);
+    }
+  });
+
+  return propsGroup;
+}
+
