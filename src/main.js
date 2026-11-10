@@ -1,147 +1,91 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
-  createFloorTexture,
-  createHazardStripeTexture,
-  buildRobotArm,
-  buildCarAssembly,
-  buildAGV,
-  buildWarehouseRack,
-  buildCargoTruck
+  buildFactoryBuilding,
+  buildPalletStack,
+  buildForklift,
+  buildDetailedTruck,
+  buildShippingContainer,
+  buildSleekCar,
+  buildAssemblyRobot,
+  buildStylizedTree,
+  buildExteriorStorageRack
 } from './factoryBuilder.js';
 
 // ==========================================
-// 1. DỮ LIỆU ĐỊNH NGHĨA DÂY CHUYỀN SẢN XUẤT
+// 1. MÔ HÌNH DỮ LIỆU CHUẨN (UNDERLYING DATA MODEL)
+// Sites, Docks, Trucks, Forklifts, Assembly Cars, Inventory, Shipments
 // ==========================================
-const STATIONS = [
-  {
-    id: 'ST-01',
-    index: 1,
-    name: 'Trạm Dập Thủy Lực 2000T',
-    code: 'STAMP-01',
-    stage: 0,
-    x: -28,
-    z: 0,
-    status: 'ok',
-    cycleTime: '12.4s',
-    powerKw: 380,
-    temp: 54.2,
-    description: 'Dập tấm hợp kim nhôm-thép cường lực thành khung sàn Skateboard chịu lực.'
+const DATA_STORE = {
+  site: {
+    id: 'PLT-01',
+    name: 'Riverside Auto Plant',
+    address: '1200 Forge Parkway, Newark NJ',
+    status: 'Operational',
+    stockOnHand: 1412,
+    stockCapacity: 1800,
+    outboundToday: 24,
+    putAwaysToday: 18,
+    oee: '96.8%'
   },
-  {
-    id: 'ST-02',
-    index: 2,
-    name: 'Trạm Hàn Robot Laser BIW',
-    code: 'WELD-02',
-    stage: 1,
-    x: -14,
-    z: 0,
-    status: 'ok',
-    cycleTime: '14.0s',
-    powerKw: 310,
-    temp: 68.5,
-    description: '4 cánh tay Robot KUKA 6 trục hàn điểm laser định hình khung vỏ Body-in-White.'
-  },
-  {
-    id: 'ST-03',
-    index: 3,
-    name: 'Buồng Sơn Tĩnh Điện Nano',
-    code: 'PAINT-03',
-    stage: 2,
-    x: 0,
-    z: 0,
-    status: 'ok',
-    cycleTime: '15.2s',
-    powerKw: 290,
-    temp: 62.0,
-    description: 'Phun sơn tự động đa lớp chống ăn mòn và sấy khô bằng tia hồng ngoại.'
-  },
-  {
-    id: 'ST-04',
-    index: 4,
-    name: 'Lắp Ráp Động Cơ & Pin EV',
-    code: 'POWR-04',
-    stage: 3,
-    x: 14,
-    z: 0,
-    status: 'ok',
-    cycleTime: '13.8s',
-    powerKw: 245,
-    temp: 48.0,
-    description: 'Tích hợp cụm động cơ điện kép, hệ thống treo khí nén và 4 bánh xe hợp kim.'
-  },
-  {
-    id: 'ST-05',
-    index: 5,
-    name: 'Nội Thất, Kính & Điện Tử AI',
-    code: 'TRIM-05',
-    stage: 4,
-    x: 24,
-    z: 0,
-    status: 'ok',
-    cycleTime: '13.1s',
-    powerKw: 165,
-    temp: 41.5,
-    description: 'Lắp kính chắn gió panorama, cụm đèn Matrix LED và nạp firmware tự lái.'
-  },
-  {
-    id: 'ST-06',
-    index: 6,
-    name: 'Cổng Quét Kiểm Định 3D LiDAR',
-    code: 'QAQC-06',
-    stage: 4,
-    x: 33,
-    z: 0,
-    status: 'ok',
-    cycleTime: '9.5s',
-    powerKw: 90,
-    temp: 36.8,
-    description: 'Quét quang học 360° kiểm tra khe hở lắp ghép, căn chỉnh thước lái và xuất xưởng.'
-  }
-];
+  docks: [
+    { id: 'BAY-1', name: 'Bay 1', site: 'PLT-01', truckCode: 'TRK-2051 • AutoTrack', status: 'Loading', progress: '4/6', x: 3.0, z: 6.0 },
+    { id: 'BAY-2', name: 'Bay 2', site: 'PLT-01', truckCode: 'TRK-2104 • Velocity', status: 'Loading', progress: '2/6', x: -6.0, z: 6.0 },
+    { id: 'BAY-3', name: 'Bay 3', site: 'PLT-01', truckCode: 'TRK-2287 • Bluepeak', status: 'En route', progress: '3 min', x: -15.0, z: 6.0 }
+  ],
+  inventory: [
+    { id: 'INV-1', emoji: '📦', name: 'Cardboard Box (Parts)', count: 1906, status: 'In Stock' },
+    { id: 'INV-2', emoji: '🟦', name: 'Plastic Container (EV Battery)', count: 297, status: 'In Stock' },
+    { id: 'INV-3', emoji: '🛞', name: 'Sport Alloy Wheels 20"', count: 212, status: 'Low Stock' },
+    { id: 'INV-4', emoji: '🖥️', name: 'LiDAR & AI Control Unit', count: 4448, status: 'In Stock' }
+  ],
+  shipments: [
+    {
+      id: '#SHP-78442',
+      truckCode: 'TRK-2051 • AutoTrack',
+      destination: 'Philadelphia, PA',
+      status: 'Loading',
+      bayInfo: 'PLT-01 • Bay 1 • 12 min left',
+      loaded: 4,
+      total: 6
+    }
+  ]
+};
 
-const CAR_MODELS = ['CyberSUV', 'AeroSedan', 'HyperGT'];
 const CAR_COLORS = [
-  { hex: '#f97316', name: 'Cam Năng Lượng' },
-  { hex: '#0ea5e9', name: 'Xanh Cyber' },
-  { hex: '#10b981', name: 'Xanh Ngọc Lục' },
-  { hex: '#ef4444', name: 'Đỏ Đua' },
-  { hex: '#eab308', name: 'Vàng Solar' },
-  { hex: '#e2e8f0', name: 'Bạc Titanium' }
+  { hex: '#ef4444', name: 'Đỏ Coral' },
+  { hex: '#2563eb', name: 'Xanh Cobalt' },
+  { hex: '#10b981', name: 'Xanh Emerald' },
+  { hex: '#f59e0b', name: 'Vàng Amber' },
+  { hex: '#8b5cf6', name: 'Tím Indigo' },
+  { hex: '#0ea5e9', name: 'Xanh Sky' }
 ];
 
-// ==========================================
-// 2. TRẠNG THÁI MÔ PHỎNG (STATE)
-// ==========================================
+const CAR_MODELS = ['Apex EV SUV', 'Aero GT Sedan', 'Cyber Crossover'];
+
 const state = {
   simSpeed: 1,
   paused: false,
-  nightShift: false,
-  producedCount: 142,
-  revenueMillions: 6.39,
-  inventory: {
-    steel: 84,
-    battery: 72,
-    chips: 91
-  },
-  selectedObject: null,
-  cameraMode: 'overview',
-  nextCarId: 143,
-  selectedSpawnColor: { hex: '#f97316', name: 'Cam Năng Lượng' }
+  roofCutaway: false, // Bắt đầu hiển thị mái xanh đặc trưng như ảnh WareTrack, người dùng có thể bấm nút hoặc zoom gần để mở mái
+  activeBottomTab: 'docks',
+  selectedObj: null,
+  nextCarSeq: 107
 };
 
 // ==========================================
-// 3. KHỞI TẠO THREE.JS SCENE, CAMERA, RENDERER
+// 2. KHỞI TẠO THREE.JS SCENE (SÁNG TƯƠI RỰC RỠ NHƯ WARETRACK)
 // ==========================================
 const container = document.getElementById('canvas-container');
 const labelsContainer = document.getElementById('labels-container');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x090d16);
-scene.fog = new THREE.FogExp2(0x090d16, 0.0065);
+scene.background = new THREE.Color(0xeef2f6);
+scene.fog = new THREE.Fog(0xeef2f6, 75, 165);
 
-const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.5, 260);
-camera.position.set(-22, 34, 46);
+const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.5, 250);
+// Đặt góc nhìn Isometric 3/4 giống hệt khung hình mẫu WareTrack
+camera.position.set(-28, 30, 44);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -149,986 +93,382 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.08;
 container.appendChild(renderer.domElement);
+
+// Tạo môi trường phản xạ ánh sáng tự nhiên (IBL) giúp kim loại và sơn xe tươi sáng
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.maxPolarAngle = Math.PI / 2 - 0.03;
-controls.minDistance = 8;
-controls.maxDistance = 120;
-controls.target.set(3, 1.5, 0);
+controls.maxPolarAngle = Math.PI / 2 - 0.04;
+controls.minDistance = 12;
+controls.maxDistance = 110;
+controls.target.set(-2, 2.5, 2);
 
 // ==========================================
-// 4. HỆ THỐNG ÁNH SÁNG NHÀ MÁY (LIGHTING)
+// 3. HỆ THỐNG ÁNH SÁNG BAN NGÀY TƯƠI SÁNG (DAYLIGHT LIGHTING)
 // ==========================================
-const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.85);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0xdbeafe, 1.35);
+hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
-const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.65);
-dirLight.position.set(28, 48, 32);
-dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
-dirLight.shadow.camera.near = 5;
-dirLight.shadow.camera.far = 130;
+const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.85);
+sunLight.position.set(-32, 48, 38);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 2048;
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = 5;
+sunLight.shadow.camera.far = 140;
 const d = 52;
-dirLight.shadow.camera.left = -d;
-dirLight.shadow.camera.right = d;
-dirLight.shadow.camera.top = d;
-dirLight.shadow.camera.bottom = -d;
-dirLight.shadow.bias = -0.0005;
-scene.add(dirLight);
-
-// Đèn trần nhà xưởng chiếu điểm dọc dây chuyền
-const stationSpotLights = [];
-STATIONS.forEach((st) => {
-  const pLight = new THREE.PointLight(0x38bdf8, 1.5, 22, 1.5);
-  pLight.position.set(st.x, 9.5, st.z);
-  scene.add(pLight);
-  stationSpotLights.push(pLight);
-});
+sunLight.shadow.camera.left = -d;
+sunLight.shadow.camera.right = d;
+sunLight.shadow.camera.top = d;
+sunLight.shadow.camera.bottom = -d;
+sunLight.shadow.bias = -0.0004;
+scene.add(sunLight);
 
 // ==========================================
-// 5. XÂY DỰNG MÔI TRƯỜNG NHÀ XƯỞNG 3D
+// 4. DỰNG KHUÔN VIÊN NHÀ MÁY, ĐƯỜNG NỘI BỘ, XE TẢI, XE NÂNG & DÂY CHUYỀN
 // ==========================================
 const selectableObjects = [];
-const stationMeshes = new Map();
-const robots = [];
-const carsOnLine = [];
-const agvFleet = [];
-const cargoTrucks = [];
-const floatingLabels = [];
+const pinMarkers = [];
+const trucksList = [];
+const forkliftsList = [];
+const assemblyCars = [];
+const assemblyRobots = [];
+let factoryBuilding = null;
 
-const floorTex = createFloorTexture();
-const hazardTex = createHazardStripeTexture();
-
-function buildFactoryEnvironment() {
-  // Sàn nhà máy chính
-  const floorGeo = new THREE.PlaneGeometry(116, 76);
-  const floorMat = new THREE.MeshStandardMaterial({
-    map: floorTex,
-    roughness: 0.55,
-    metalness: 0.2
-  });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Đường viền an toàn xung quanh dây chuyền chính
-  const hazardMat = new THREE.MeshBasicMaterial({ map: hazardTex });
-  hazardTex.repeat.set(35, 1);
-  const lineBorderFront = new THREE.Mesh(new THREE.PlaneGeometry(74, 0.35), hazardMat);
-  lineBorderFront.rotation.x = -Math.PI / 2;
-  lineBorderFront.position.set(2, 0.02, 4.3);
-  scene.add(lineBorderFront);
-
-  const lineBorderBack = new THREE.Mesh(new THREE.PlaneGeometry(74, 0.35), hazardMat);
-  lineBorderBack.rotation.x = -Math.PI / 2;
-  lineBorderBack.position.set(2, 0.02, -4.3);
-  scene.add(lineBorderBack);
-
-  // Băng chuyền chính (Main Assembly Conveyor Track)
-  const conveyorBase = new THREE.Mesh(
-    new THREE.BoxGeometry(72, 0.32, 3.2),
-    new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.35 })
+function buildCampusGround() {
+  // Mặt nền khuôn viên xám sáng sạch sẽ
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(220, 220),
+    new THREE.MeshStandardMaterial({ color: 0xe9eef4, roughness: 0.85, metalness: 0.02 })
   );
-  conveyorBase.position.set(2, 0.16, 0);
-  conveyorBase.receiveShadow = true;
-  scene.add(conveyorBase);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
 
-  // Các thanh ray dẫn hướng phát sáng dọc chuyền
-  const railMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
-  [-1.35, 1.35].forEach((rz) => {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(71.5, 0.05, 0.08), railMat);
-    rail.position.set(2, 0.34, rz);
+  // Sân bê tông khu vực nhà máy & bãi bốc dỡ (Yard Apron)
+  const yardApron = new THREE.Mesh(
+    new THREE.PlaneGeometry(82, 54),
+    new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7, metalness: 0.05 })
+  );
+  yardApron.rotation.x = -Math.PI / 2;
+  yardApron.position.set(0, 0.01, 2);
+  yardApron.receiveShadow = true;
+  scene.add(yardApron);
+
+  // Sàn dây chuyền bên trong nhà máy
+  const interiorFloor = new THREE.Mesh(
+    new THREE.PlaneGeometry(41.5, 19.5),
+    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 })
+  );
+  interiorFloor.rotation.x = -Math.PI / 2;
+  interiorFloor.position.set(0, 0.02, -4);
+  interiorFloor.receiveShadow = true;
+  scene.add(interiorFloor);
+
+  // Đường xe tải chạy phía trước (Main Logistics Roadway)
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0xdbe3ec, roughness: 0.75 });
+  const mainRoad = new THREE.Mesh(new THREE.PlaneGeometry(110, 10.5), roadMat);
+  mainRoad.rotation.x = -Math.PI / 2;
+  mainRoad.position.set(0, 0.02, 23);
+  mainRoad.receiveShadow = true;
+  scene.add(mainRoad);
+
+  // Vạch kẻ đường đứt nét màu trắng
+  const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  for (let rx = -48; rx <= 48; rx += 6) {
+    const dash = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.22), dashMat);
+    dash.rotation.x = -Math.PI / 2;
+    dash.position.set(rx, 0.03, 23);
+    scene.add(dash);
+  }
+}
+
+function buildInteriorAssemblyLine() {
+  // Băng chuyền lắp ráp ô tô chạy dọc bên trong tòa nhà máy (từ X = -18 đến X = +18, tại Z = -4.5)
+  const beltBase = new THREE.Mesh(
+    new THREE.BoxGeometry(37, 0.28, 3.1),
+    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.4 })
+  );
+  beltBase.position.set(0, 0.14, -4.5);
+  beltBase.receiveShadow = true;
+  scene.add(beltBase);
+
+  // Viền xanh dương dọc băng chuyền
+  [-1.45, 1.45].forEach((oz) => {
+    const rail = new THREE.Mesh(
+      new THREE.BoxGeometry(37, 0.08, 0.14),
+      new THREE.MeshBasicMaterial({ color: 0x2563eb })
+    );
+    rail.position.set(0, 0.3, -4.5 + oz);
     scene.add(rail);
   });
 
-  // Làn đường từ trường cho xe AGV (AGV Magnetic Guide Paths)
-  const agvPathMat = new THREE.MeshBasicMaterial({
-    color: 0x0284c7,
-    transparent: true,
-    opacity: 0.35
-  });
-  const agvLaneSouth = new THREE.Mesh(new THREE.PlaneGeometry(66, 0.9), agvPathMat);
-  agvLaneSouth.rotation.x = -Math.PI / 2;
-  agvLaneSouth.position.set(0, 0.015, 8.5);
-  scene.add(agvLaneSouth);
-
-  const agvLaneNorth = new THREE.Mesh(new THREE.PlaneGeometry(66, 0.9), agvPathMat);
-  agvLaneNorth.rotation.x = -Math.PI / 2;
-  agvLaneNorth.position.set(0, 0.015, -8.5);
-  scene.add(agvLaneNorth);
-
-  // Hệ khung cột thép nhà xưởng & dầm cầu trục (Gantry Pillars & Trusses)
-  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.65, roughness: 0.4 });
-  for (let px = -38; px <= 38; px += 19) {
-    [-22, 22].forEach((pz) => {
-      const col = new THREE.Mesh(new THREE.BoxGeometry(0.65, 13, 0.65), pillarMat);
-      col.position.set(px, 6.5, pz);
-      col.castShadow = true;
-      scene.add(col);
+  // 8 Cánh tay Robot lắp ráp hai bên dây chuyền
+  const robotX = [-12, -4, 4, 12];
+  robotX.forEach((rx, idx) => {
+    const botNorth = buildAssemblyRobot({
+      id: `ROB-N${idx + 1}`,
+      name: `Robot Lắp Ráp #${idx * 2 + 1}`,
+      x: rx,
+      z: -7.2,
+      side: 1
     });
-    const roofBeam = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.55, 44.5), pillarMat);
-    roofBeam.position.set(px, 12.8, 0);
-    scene.add(roofBeam);
+    const botSouth = buildAssemblyRobot({
+      id: `ROB-S${idx + 1}`,
+      name: `Robot Lắp Ráp #${idx * 2 + 2}`,
+      x: rx,
+      z: -1.8,
+      side: -1
+    });
+    scene.add(botNorth, botSouth);
+    assemblyRobots.push(botNorth, botSouth);
+    selectableObjects.push(botNorth, botSouth);
+  });
+
+  // Khởi tạo 6 xe ô tô đang lắp ráp trên dây chuyền
+  for (let i = 0; i < 6; i++) {
+    const cColor = CAR_COLORS[i % CAR_COLORS.length];
+    const car = buildSleekCar({
+      id: `CAR-${101 + i}`,
+      model: CAR_MODELS[i % CAR_MODELS.length],
+      colorHex: cColor.hex,
+      colorName: cColor.name
+    });
+    car.userData.progress = i * 16.5 + 5;
+    updateCarPositionOnLine(car);
+    scene.add(car);
+    assemblyCars.push(car);
+    selectableObjects.push(car);
   }
 }
 
-// ==========================================
-// 6. XÂY DỰNG 6 TRẠM SẢN XUẤT & ROBOT
-// ==========================================
-let stampingRamMesh = null;
-let paintMistParticles = null;
-let qcLaserBeam = null;
+function updateCarPositionOnLine(car) {
+  const x = -17.5 + (car.userData.progress / 100) * 35;
+  car.position.set(x, 0.28, -4.5);
 
-function buildProductionStations() {
-  STATIONS.forEach((st) => {
-    const stGroup = new THREE.Group();
-    stGroup.position.set(st.x, 0, st.z);
-    stGroup.userData = {
-      Selectable: true,
-      type: 'station',
-      ...st
-    };
+  let stage = 0;
+  if (car.userData.progress >= 22) stage = 1;
+  if (car.userData.progress >= 48) stage = 2;
+  if (car.userData.progress >= 72) stage = 3;
+  car.userData.updateStage(stage);
+}
 
-    // Nền trạm
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(9.5, 0.12, 7.6),
-      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 })
-    );
-    pad.position.y = 0.06;
-    pad.receiveShadow = true;
-    stGroup.add(pad);
+function buildExteriorYardObjects() {
+  // 1. Tòa nhà máy chính màu xanh Cobalt giống hệt WareTrack
+  factoryBuilding = buildFactoryBuilding();
+  factoryBuilding.userData = {
+    Selectable: true,
+    type: 'plant',
+    id: 'PLT-01',
+    name: 'Riverside Auto Plant'
+  };
+  scene.add(factoryBuilding);
+  selectableObjects.push(factoryBuilding);
 
-    // Đèn báo trạng thái cột (Andon Tower Light)
-    const beaconPole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 4.2, 8),
-      new THREE.MeshStandardMaterial({ color: 0x64748b })
-    );
-    beaconPole.position.set(-4.2, 2.1, -3.3);
-    stGroup.add(beaconPole);
+  // 2. Container MAERA LINE màu xanh ngọc bên trái sân
+  const maeraContainer = buildShippingContainer(-24.5, 10.5);
+  maeraContainer.rotation.y = Math.PI / 2;
+  scene.add(maeraContainer);
+  selectableObjects.push(maeraContainer);
 
-    const beaconLamp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.24, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0x10b981 })
-    );
-    beaconLamp.position.set(-4.2, 4.3, -3.3);
-    stGroup.add(beaconLamp);
-    stGroup.userData.beaconLamp = beaconLamp;
+  // 3. Các kiện Pallet thùng Carton ở từng cửa Bay D1, D2, D3 và sân bãi + Ghim Pin xanh giống hệt WareTrack
+  const palletConfigs = [
+    { x: -15.0, z: 6.8, count: 6, type: 'cardboard', id: 'PLT-BAY3', name: 'Lô Linh Kiện Cửa D3', pin: false },
+    { x: -6.0, z: 6.8, count: 6, type: 'cardboard', id: 'PLT-BAY2', name: 'Lô Phụ Tùng Cửa D2', pin: false },
+    { x: 3.0, z: 6.8, count: 6, type: 'cardboard', id: 'PLT-BAY1', name: 'Lô Xuất Hàng Cửa D1', pin: true },
+    { x: 12.0, z: 7.5, count: 6, type: 'cardboard', id: 'PLT-GATE0', name: 'Lô Hàng Sẵn Sàng Bốc Xếp', pin: true },
+    { x: -2.2, z: 13.5, count: 6, type: 'cardboard', id: 'PLT-STAGE1', name: 'Pallet Đệm Trung Chuyển #1', pin: true },
+    { x: -14.5, z: 12.8, count: 5, type: 'cardboard', id: 'PLT-STAGE2', name: 'Pallet Đệm Trung Chuyển #2', pin: false },
+    { x: -17.5, z: 14.5, count: 5, type: 'cardboard', id: 'PLT-STAGE3', name: 'Pallet Đệm Trung Chuyển #3', pin: false },
+    // Các kiện nhựa xanh dương (Blue Plastic Containers) phía bên phải nhà máy giống ảnh mẫu
+    { x: 25.5, z: 2.5, count: 6, type: 'plastic', id: 'PLT-BLUE1', name: 'Kiện Vỏ Pin Nhựa Xanh #1', pin: true },
+    { x: 28.5, z: 0.5, count: 6, type: 'plastic', id: 'PLT-BLUE2', name: 'Kiện Vỏ Pin Nhựa Xanh #2', pin: false },
+    { x: 26.0, z: -2.5, count: 5, type: 'plastic', id: 'PLT-BLUE3', name: 'Kiện Vỏ Pin Nhựa Xanh #3', pin: false },
+    { x: 11.5, z: -18.5, count: 6, type: 'plastic', id: 'PLT-BLUE4', name: 'Kiện Vỏ Pin Khu Bắc', pin: false }
+  ];
 
-    // Thiết bị đặc thù từng trạm
-    if (st.index === 1) {
-      // Trạm 1: Máy dập thủy lực khổng lồ 2000T
-      const archMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
-      const leftCol = new THREE.Mesh(new THREE.BoxGeometry(2.6, 6.8, 1.1), archMat);
-      leftCol.position.set(0, 3.4, 2.35);
-      leftCol.castShadow = true;
-      stGroup.add(leftCol);
-
-      const rightCol = new THREE.Mesh(new THREE.BoxGeometry(2.6, 6.8, 1.1), archMat);
-      rightCol.position.set(0, 3.4, -2.35);
-      rightCol.castShadow = true;
-      stGroup.add(rightCol);
-
-      const topCrown = new THREE.Mesh(
-        new THREE.BoxGeometry(3.2, 1.3, 6.2),
-        new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.4, roughness: 0.3 })
-      );
-      topCrown.position.set(0, 6.5, 0);
-      topCrown.castShadow = true;
-      stGroup.add(topCrown);
-
-      stampingRamMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 1.4, 2.2),
-        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.2 })
-      );
-      stampingRamMesh.position.set(0, 4.2, 0);
-      stGroup.add(stampingRamMesh);
-    } else if (st.index === 2 || st.index === 4 || st.index === 5) {
-      // Trạm 2, 4, 5: Các cặp cánh tay Robot 6 trục hai bên dây chuyền
-      const armColor = st.index === 2 ? 0xf97316 : st.index === 4 ? 0x0ea5e9 : 0x10b981;
-      const positions = [
-        [-1.8, 2.8, 1],
-        [1.8, 2.8, 1],
-        [-1.8, -2.8, -1],
-        [1.8, -2.8, -1]
-      ];
-      positions.forEach(([rx, rz, side], idx) => {
-        const bot = buildRobotArm({
-          id: `${st.code}-R${idx + 1}`,
-          stationId: st.id,
-          name: `Robot ${st.code} #${idx + 1}`,
-          color: armColor,
-          side
-        });
-        bot.position.set(st.x + rx, 0, st.z + rz);
-        bot.rotation.y = rz > 0 ? Math.PI / 2 : -Math.PI / 2;
-        scene.add(bot);
-        robots.push(bot);
-        selectableObjects.push(bot);
-      });
-    } else if (st.index === 3) {
-      // Trạm 3: Buồng Sơn Tĩnh Điện trong suốt (Glass Paint Booth)
-      const boothFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(8.2, 4.6, 5.4),
-        new THREE.MeshStandardMaterial({
-          color: 0x38bdf8,
-          transparent: true,
-          opacity: 0.16,
-          roughness: 0.1,
-          metalness: 0.8
-        })
-      );
-      boothFrame.position.y = 2.3;
-      stGroup.add(boothFrame);
-
-      // 2 Robot phun sơn bên trong
-      [-1.5, 1.5].forEach((rz, idx) => {
-        const bot = buildRobotArm({
-          id: `PAINT-R${idx + 1}`,
-          stationId: st.id,
-          name: `Robot Phun Sơn Nano #${idx + 1}`,
-          color: 0x0ea5e9,
-          side: idx === 0 ? 1 : -1
-        });
-        bot.position.set(st.x, 0, st.z + rz * 1.9);
-        bot.rotation.y = rz > 0 ? Math.PI / 2 : -Math.PI / 2;
-        scene.add(bot);
-        robots.push(bot);
-        selectableObjects.push(bot);
-      });
-    } else if (st.index === 6) {
-      // Trạm 6: Cổng vòm Quét Kiểm Định 3D LiDAR
-      const archGeo = new THREE.BoxGeometry(2.2, 4.5, 5.0);
-      const archMat = new THREE.MeshStandardMaterial({
-        color: 0x0f172a,
-        metalness: 0.8,
-        roughness: 0.2
-      });
-      const portal = new THREE.Mesh(archGeo, archMat);
-      portal.position.y = 2.25;
-      stGroup.add(portal);
-
-      // Khoét rỗng giữa bằng khung sáng
-      qcLaserBeam = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 3.6, 3.8),
-        new THREE.MeshBasicMaterial({
-          color: 0x10b981,
-          transparent: true,
-          opacity: 0.32
-        })
-      );
-      qcLaserBeam.position.set(0, 2.0, 0);
-      stGroup.add(qcLaserBeam);
+  palletConfigs.forEach((pc) => {
+    const p = buildPalletStack({
+      x: pc.x,
+      z: pc.z,
+      boxCount: pc.count,
+      boxType: pc.type,
+      id: pc.id,
+      name: pc.name
+    });
+    scene.add(p);
+    selectableObjects.push(p);
+    if (pc.pin) {
+      createPinMarker(p, '', 'teardrop', new THREE.Vector3(0, 2.3, 0));
     }
+  });
 
-    scene.add(stGroup);
-    stationMeshes.set(st.id, stGroup);
-    selectableObjects.push(stGroup);
-    createFloatingLabel(stGroup, `${st.index}. ${st.code}`, new THREE.Vector3(0, 6.2, 0));
+  // 4. Kệ kho cao tầng phía Đông Bắc giống hệt ảnh WareTrack
+  const rack1 = buildExteriorStorageRack(18.5, -15.5, 'RACK-E1');
+  scene.add(rack1);
+  selectableObjects.push(rack1);
+
+  // 5. Hai chiếc Xe Nâng (Forklifts) màu vàng-xanh dương hoạt động ở sân bên trái
+  const fl1Waypoints = [
+    new THREE.Vector3(-16.5, 0, 8.5),
+    new THREE.Vector3(-6.0, 0, 9.5),
+    new THREE.Vector3(-6.0, 0, 14.5),
+    new THREE.Vector3(-16.5, 0, 14.5)
+  ];
+  const fl2Waypoints = [
+    new THREE.Vector3(-22.5, 0, 4.5),
+    new THREE.Vector3(-15.5, 0, 4.5),
+    new THREE.Vector3(-15.5, 0, 9.0),
+    new THREE.Vector3(-22.5, 0, 9.0)
+  ];
+
+  const fl1 = buildForklift({
+    id: 'FL-01',
+    name: 'Forklift FL-01 (Yale EV)',
+    taskDesc: 'Loading TRK-2051 at Bay 1',
+    waypoints: fl1Waypoints
+  });
+  const fl2 = buildForklift({
+    id: 'FL-02',
+    name: 'Forklift FL-02 (Crown EV)',
+    taskDesc: 'Moving Battery Pallets at Bay 3',
+    waypoints: fl2Waypoints
+  });
+  scene.add(fl1, fl2);
+  forkliftsList.push(fl1, fl2);
+  selectableObjects.push(fl1, fl2);
+  createPinMarker(fl1, 'FL-01', 'pill', new THREE.Vector3(0, 2.9, 0));
+  createPinMarker(fl2, 'FL-02', 'pill', new THREE.Vector3(0, 2.9, 0));
+
+  // 6. Đội Xe Tải (Trucks) giống hệt bố cục WareTrack
+  // Xe tải 1: TRK-2051 (AutoTrack) đang đậu bốc hàng trước cửa Bay 2 / Bay 1
+  const truck1 = buildDetailedTruck({
+    id: 'TRK-2051',
+    code: 'TRK-2051',
+    company: 'AutoTrack',
+    tagline: 'DELIVERING ON TIME, EVERY TIME',
+    cabColor: 0x2563eb,
+    accentHex: '#2563eb',
+    bay: 'Bay 1',
+    state: 'Loading',
+    progressText: '4/6'
+  });
+  truck1.position.set(-7.5, 0, 16.2);
+  truck1.rotation.y = -Math.PI / 2;
+  truck1.userData.baseX = -7.5;
+  truck1.userData.motionState = 'PARKED';
+  scene.add(truck1);
+  trucksList.push(truck1);
+  selectableObjects.push(truck1);
+  createPinMarker(truck1, 'TRK-2051 • AutoTrack', 'pill', new THREE.Vector3(0, 4.4, 0));
+
+  // Xe tải 2: TRK-2287 (Bluepeak) đang chạy trên đường nội bộ phía trước
+  const truck2 = buildDetailedTruck({
+    id: 'TRK-2287',
+    code: 'TRK-2287',
+    company: 'Bluepeak',
+    tagline: 'SMART LOGISTICS NETWORK',
+    cabColor: 0x1e293b,
+    accentHex: '#0284c7',
+    bay: 'Bay 3',
+    state: 'En route',
+    progressText: '3 min'
+  });
+  truck2.position.set(8.5, 0, 22.8);
+  truck2.rotation.y = -Math.PI / 2;
+  truck2.userData.motionState = 'CRUISING';
+  scene.add(truck2);
+  trucksList.push(truck2);
+  selectableObjects.push(truck2);
+  createPinMarker(truck2, 'TRK-2287 • Bluepeak', 'pill', new THREE.Vector3(0, 4.4, 0));
+
+  // Xe tải 3: TRK-2104 (Velocity) đang chờ xuất phát
+  const truck3 = buildDetailedTruck({
+    id: 'TRK-2104',
+    code: 'TRK-2104',
+    company: 'Velocity',
+    tagline: 'AUTO CARRIER EXPRESS',
+    cabColor: 0x0d9488,
+    accentHex: '#0d9488',
+    bay: 'Bay 2',
+    state: 'Loading',
+    progressText: '2/6'
+  });
+  truck3.position.set(22.5, 0, 22.8);
+  truck3.rotation.y = -Math.PI / 2;
+  truck3.userData.motionState = 'CRUISING';
+  scene.add(truck3);
+  trucksList.push(truck3);
+  selectableObjects.push(truck3);
+
+  // 7. Cây xanh Stylised tròn trịa xung quanh khuôn viên
+  const treeCoords = [
+    [6, -22, 1.1],
+    [13, -24, 0.85],
+    [22, -20, 1.15],
+    [32, -14, 0.95],
+    [35, -6, 1.05],
+    [-32, -18, 1.1],
+    [-36, -6, 0.9]
+  ];
+  treeCoords.forEach(([tx, tz, sc]) => {
+    scene.add(buildStylizedTree(tx, tz, sc));
   });
 }
 
 // ==========================================
-// 7. HỆ THỐNG HẠT TIA LỬA HÀN (WELDING SPARKS)
+// 5. QUẢN LÝ PIN MARKERS 3D (GIỐNG HỆT WARETRACK)
 // ==========================================
-const SPARK_COUNT = 120;
-const sparkGeo = new THREE.BufferGeometry();
-const sparkPositions = new Float32Array(SPARK_COUNT * 3);
-const sparkVelocities = [];
-
-for (let i = 0; i < SPARK_COUNT; i++) {
-  sparkPositions[i * 3] = -14;
-  sparkPositions[i * 3 + 1] = 1.6;
-  sparkPositions[i * 3 + 2] = 0;
-  sparkVelocities.push({
-    vx: (Math.random() - 0.5) * 6,
-    vy: Math.random() * 5 + 1,
-    vz: (Math.random() - 0.5) * 6,
-    life: Math.random()
-  });
-}
-sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPositions, 3));
-const sparkMat = new THREE.PointsMaterial({
-  color: 0xfbbf24,
-  size: 0.22,
-  transparent: true,
-  opacity: 0.9
-});
-const sparkSystem = new THREE.Points(sparkGeo, sparkMat);
-scene.add(sparkSystem);
-
-function updateSparks(dt) {
-  const weldStation = STATIONS[1];
-  const isWeldActive = weldStation.status !== 'fault' && !state.paused;
-  sparkSystem.visible = isWeldActive;
-  if (!isWeldActive) return;
-
-  const posAttr = sparkGeo.attributes.position;
-  for (let i = 0; i < SPARK_COUNT; i++) {
-    const v = sparkVelocities[i];
-    v.life += dt * 1.8 * state.simSpeed;
-    if (v.life >= 1) {
-      v.life = 0;
-      posAttr.setXYZ(
-        i,
-        weldStation.x + (Math.random() - 0.5) * 3.5,
-        1.5 + Math.random() * 0.6,
-        (Math.random() - 0.5) * 1.4
-      );
-    } else {
-      const x = posAttr.getX(i) + v.vx * dt * state.simSpeed;
-      const y = Math.max(0.1, posAttr.getY(i) + (v.vy - 9.8 * v.life) * dt * state.simSpeed);
-      const z = posAttr.getZ(i) + v.vz * dt * state.simSpeed;
-      posAttr.setXYZ(i, x, y, z);
-    }
-  }
-  posAttr.needsUpdate = true;
-}
-
-// ==========================================
-// 8. KHO LINH KIỆN, ĐỘI XE AGV & BÃI XE TẢI
-// ==========================================
-function buildLogisticsAndWarehouse() {
-  // 8 Kệ kho thông minh (4 kệ phía Bắc, 4 kệ phía Nam)
-  const rackCoords = [
-    [-24, -15, 'RACK-N1'],
-    [-8, -15, 'RACK-N2'],
-    [8, -15, 'RACK-N3'],
-    [24, -15, 'RACK-N4'],
-    [-24, 15, 'RACK-S1'],
-    [-8, 15, 'RACK-S2'],
-    [8, 15, 'RACK-S3'],
-    [24, 15, 'RACK-S4']
-  ];
-  rackCoords.forEach(([rx, rz, id]) => {
-    const rack = buildWarehouseRack(rx, rz, id);
-    scene.add(rack);
-    selectableObjects.push(rack);
-  });
-
-  // 4 Xe tự hành AGV chạy vòng tròn cấp phát vật tư
-  const loopSouth = [
-    new THREE.Vector3(-28, 0, 8.5),
-    new THREE.Vector3(26, 0, 8.5),
-    new THREE.Vector3(26, 0, 11.5),
-    new THREE.Vector3(-28, 0, 11.5)
-  ];
-  const loopNorth = [
-    new THREE.Vector3(26, 0, -8.5),
-    new THREE.Vector3(-28, 0, -8.5),
-    new THREE.Vector3(-28, 0, -11.5),
-    new THREE.Vector3(26, 0, -11.5)
-  ];
-
-  const agvConfigs = [
-    { id: 'AGV-01', name: 'AGV Carrier Alpha', routeName: 'Tuyến Nam (Pin & Mâm)', waypoints: loopSouth, wpIndex: 0, color: 0x0ea5e9 },
-    { id: 'AGV-02', name: 'AGV Carrier Beta', routeName: 'Tuyến Nam (Khung Gầm)', waypoints: loopSouth, wpIndex: 2, color: 0x10b981 },
-    { id: 'AGV-03', name: 'AGV Carrier Gamma', routeName: 'Tuyến Bắc (Thép Cuộn)', waypoints: loopNorth, wpIndex: 0, color: 0xf59e0b },
-    { id: 'AGV-04', name: 'AGV Carrier Delta', routeName: 'Tuyến Bắc (Vi Mạch AI)', waypoints: loopNorth, wpIndex: 2, color: 0x38bdf8 }
-  ];
-
-  agvConfigs.forEach((cfg) => {
-    const agv = buildAGV(cfg);
-    agv.userData.wpIndex = cfg.wpIndex;
-    const startPt = cfg.waypoints[cfg.wpIndex];
-    agv.position.copy(startPt);
-    scene.add(agv);
-    agvFleet.push(agv);
-    selectableObjects.push(agv);
-    createFloatingLabel(agv, cfg.id, new THREE.Vector3(0, 1.9, 0));
-  });
-
-  // 2 Xe tải vận chuyển thành phẩm ở Cổng Xuất Hàng (Đông)
-  const truck1 = buildCargoTruck({
-    id: 'TRUCK-01',
-    name: 'Container Vận Tải #01',
-    dockNumber: 1,
-    zPos: -6.5,
-    accentColor: 0xf97316
-  });
-  const truck2 = buildCargoTruck({
-    id: 'TRUCK-02',
-    name: 'Container Vận Tải #02',
-    dockNumber: 2,
-    zPos: 6.5,
-    accentColor: 0x0ea5e9
-  });
-  scene.add(truck1, truck2);
-  cargoTrucks.push(truck1, truck2);
-  selectableObjects.push(truck1, truck2);
-  createFloatingLabel(truck1, 'DOCK-01 // TRUCK', new THREE.Vector3(0, 4.2, 0));
-  createFloatingLabel(truck2, 'DOCK-02 // TRUCK', new THREE.Vector3(0, 4.2, 0));
-}
-
-// ==========================================
-// 9. QUẢN LÝ XE TRÊN CHUYỀN & NHÃN NỔI 3D
-// ==========================================
-function createFloatingLabel(targetObj, text, offset = new THREE.Vector3(0, 3, 0)) {
+function createPinMarker(targetObj, labelText, style = 'pill', offset = new THREE.Vector3(0, 3, 0)) {
   const el = document.createElement('div');
-  el.className = 'world-label';
-  el.innerHTML = `<span class="status-dot"></span><span>${text}</span>`;
+  el.className = 'pin-marker';
+
+  if (style === 'teardrop') {
+    el.innerHTML = `<div class="teardrop-pin"></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="pin-pill">
+        <span class="pin-dot"></span>
+        <span>${labelText}</span>
+      </div>
+    `;
+  }
+
   el.addEventListener('click', (e) => {
     e.stopPropagation();
-    selectObject(targetObj);
+    selectObject3D(targetObj);
   });
+
   labelsContainer.appendChild(el);
-  const labelRecord = { targetObj, el, offset };
-  floatingLabels.push(labelRecord);
-  targetObj.userData.labelEl = el;
-  return labelRecord;
+  const record = { targetObj, el, offset };
+  pinMarkers.push(record);
+  targetObj.userData.pinEl = el;
+  return record;
 }
 
-function removeFloatingLabel(targetObj) {
-  const idx = floatingLabels.findIndex((item) => item.targetObj === targetObj);
-  if (idx !== -1) {
-    floatingLabels[idx].el.remove();
-    floatingLabels.splice(idx, 1);
-  }
-}
-
-function spawnCarOnLine({ model, colorHex, colorName, initialProgress = 0 }) {
-  // Kiểm tra tránh đè lên xe vừa vào đầu chuyền
-  const tooClose = carsOnLine.some((c) => Math.abs(c.userData.progress - initialProgress) < 11);
-  if (tooClose && initialProgress === 0) {
-    addLog('⚠️ Đầu băng chuyền đang bận, vui lòng đợi vài giây để đưa xe tiếp theo vào.');
-    return null;
-  }
-
-  const carId = `CAR-${state.nextCarId++}`;
-  const car = buildCarAssembly({
-    id: carId,
-    model: model || CAR_MODELS[Math.floor(Math.random() * CAR_MODELS.length)],
-    colorHex: colorHex || CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)].hex,
-    colorName: colorName || 'Tiêu chuẩn'
-  });
-
-  car.userData.progress = initialProgress;
-  updateCarWorldPosition(car);
-  scene.add(car);
-  carsOnLine.push(car);
-  selectableObjects.push(car);
-  createFloatingLabel(car, `${carId} (${car.userData.model})`, new THREE.Vector3(0, 2.2, 0));
-
-  // Tiêu hao nhẹ tồn kho khi tạo xe mới
-  if (initialProgress === 0) {
-    state.inventory.steel = Math.max(15, state.inventory.steel - 2);
-    state.inventory.battery = Math.max(15, state.inventory.battery - 3);
-    state.inventory.chips = Math.max(15, state.inventory.chips - 1);
-    updateInventoryUI();
-    addLog(`🚘 Đã đưa khung gầm <strong>${carId}</strong> (${car.userData.model}) vào Trạm Dập #1.`);
-  }
-
-  return car;
-}
-
-function updateCarWorldPosition(car) {
-  // progress 0 -> 100 tương ứng x từ -33 đến +36
-  const x = -33 + (car.userData.progress / 100) * 69;
-  car.position.set(x, 0, 0);
-
-  // Xác định stage lắp ráp dựa theo toạ độ X qua từng trạm
-  let stage = 0;
-  if (x >= -17) stage = 1; // Đã qua trạm Hàn BIW
-  if (x >= -2) stage = 2;  // Đã qua buồng Sơn
-  if (x >= 12) stage = 3;  // Đã lắp Động cơ & Bánh xe
-  if (x >= 22) stage = 4;  // Đã lắp Kính & Đèn LED
-
-  if (car.userData.stage !== stage) {
-    car.userData.updateStage(stage);
-  }
-}
-
-// Khởi tạo sẵn 6 xe rải đều trên dây chuyền lúc mở app
-function seedInitialCars() {
-  const initialProgresses = [6, 23, 41, 59, 76, 91];
-  initialProgresses.forEach((prog, i) => {
-    const colorObj = CAR_COLORS[i % CAR_COLORS.length];
-    const model = CAR_MODELS[i % CAR_MODELS.length];
-    spawnCarOnLine({
-      model,
-      colorHex: colorObj.hex,
-      colorName: colorObj.name,
-      initialProgress: prog
-    });
-  });
-}
-
-// ==========================================
-// 10. VÒNG LẶP CẬP NHẬT MÔ PHỎNG (SIMULATION)
-// ==========================================
-function updateSimulation(dt, elapsed) {
-  if (state.paused) return;
-  const effDt = dt * state.simSpeed;
-
-  // Kiểm tra xem có trạm nào đang dừng sự cố không
-  const faultStation = STATIONS.find((s) => s.status === 'fault');
-  const lineSpeedMultiplier = faultStation ? 0.15 : 1.0;
-
-  // 1. Di chuyển các xe trên băng chuyền
-  for (let i = carsOnLine.length - 1; i >= 0; i--) {
-    const car = carsOnLine[i];
-    car.userData.progress += effDt * 2.35 * lineSpeedMultiplier;
-    updateCarWorldPosition(car);
-
-    // Xoay bánh xe nếu đã lắp bánh (stage >= 3)
-    if (car.userData.stage >= 3) {
-      car.userData.wheelMeshes.forEach((w) => {
-        w.rotation.z -= effDt * 3.2 * lineSpeedMultiplier;
-      });
-    }
-
-    // Khi xe hoàn tất kiểm định ở cuối băng chuyền (progress >= 100)
-    if (car.userData.progress >= 100) {
-      state.producedCount += 1;
-      state.revenueMillions = +(state.revenueMillions + 0.045).toFixed(2);
-      addLog(`✅ Xe <strong>${car.userData.id}</strong> (${car.userData.model}) vượt qua kiểm định 3D LiDAR và xuất xưởng!`);
-
-      if (state.selectedObject === car) {
-        state.selectedObject = null;
-      }
-      removeFloatingLabel(car);
-      scene.remove(car);
-      const selIdx = selectableObjects.indexOf(car);
-      if (selIdx !== -1) selectableObjects.splice(selIdx, 1);
-      carsOnLine.splice(i, 1);
-
-      // Tự động cấp phôi xe mới ở đầu chuyền để dây chuyền luôn sôi động
-      const nextColor = CAR_COLORS[state.producedCount % CAR_COLORS.length];
-      const nextModel = CAR_MODELS[state.producedCount % CAR_MODELS.length];
-      spawnCarOnLine({
-        model: nextModel,
-        colorHex: nextColor.hex,
-        colorName: nextColor.name,
-        initialProgress: 0
-      });
-    }
-  }
-
-  // 2. Hoạt ảnh máy dập thủy lực Trạm 1 & tia quét Trạm 6
-  if (stampingRamMesh && STATIONS[0].status !== 'fault') {
-    stampingRamMesh.position.y = 3.2 + Math.abs(Math.sin(elapsed * 2.8 * state.simSpeed)) * 1.45;
-  }
-  if (qcLaserBeam) {
-    qcLaserBeam.position.x = Math.sin(elapsed * 3.5 * state.simSpeed) * 0.85;
-  }
-
-  // 3. Hoạt ảnh các cánh tay Robot 6 trục
-  robots.forEach((bot) => {
-    const parentSt = STATIONS.find((s) => s.id === bot.userData.stationId);
-    if (parentSt && parentSt.status === 'fault') return;
-
-    const j = bot.userData.joints;
-    const t = elapsed * 2.4 * state.simSpeed + j.phase;
-    j.turret.rotation.y = Math.sin(t) * 0.55;
-    j.lowerArmPivot.rotation.z = Math.cos(t * 1.2) * 0.32 * j.side;
-    j.upperArmPivot.rotation.z = (-0.35 + Math.sin(t * 1.6) * 0.35) * j.side;
-    j.wrist.rotation.y = Math.cos(t * 2.2) * 0.6;
-  });
-
-  // 4. Di chuyển đội xe tự hành AGV trên làn từ trường
-  agvFleet.forEach((agv) => {
-    const d = agv.userData;
-    const wps = d.waypoints;
-    const currWp = wps[d.wpIndex];
-    const nextWp = wps[(d.wpIndex + 1) % wps.length];
-
-    const segDist = currWp.distanceTo(nextWp);
-    d.progress += (effDt * d.speedMps * 2.2) / segDist;
-
-    if (d.progress >= 1) {
-      d.progress = 0;
-      d.wpIndex = (d.wpIndex + 1) % wps.length;
-    }
-
-    const p0 = wps[d.wpIndex];
-    const p1 = wps[(d.wpIndex + 1) % wps.length];
-    agv.position.lerpVectors(p0, p1, d.progress);
-
-    const dir = new THREE.Vector3().subVectors(p1, p0).normalize();
-    agv.rotation.y = Math.atan2(-dir.z, dir.x);
-  });
-
-  // 5. Hoạt ảnh xe tải Container xuất bến & quay lại
-  cargoTrucks.forEach((truck) => {
-    const td = truck.userData;
-    if (td.state === 'DEPARTING') {
-      truck.position.x += effDt * 9.5;
-      if (truck.position.x >= 75) {
-        td.state = 'RETURNING';
-      }
-    } else if (td.state === 'RETURNING') {
-      truck.position.x -= effDt * 8.5;
-      if (truck.position.x <= td.baseX) {
-        truck.position.x = td.baseX;
-        td.state = 'DOCKED';
-        addLog(`🚛 <strong>${td.name}</strong> đã cập bến Dock #${td.dockNumber} sẵn sàng nhận lô xe mới.`);
-      }
-    }
-  });
-
-  // 6. Cập nhật hạt tia lửa hàn
-  updateSparks(dt);
-}
-
-// ==========================================
-// 11. TƯƠNG TÁC CLICK 3D (RAYCASTER) & CAMERA
-// ==========================================
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let pointerDownPos = { x: 0, y: 0 };
-
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  pointerDownPos = { x: e.clientX, y: e.clientY };
-});
-
-renderer.domElement.addEventListener('pointerup', (e) => {
-  const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
-  if (moveDist > 6) return; // Người dùng đang kéo xoay camera chứ không phải click
-
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(selectableObjects, true);
-
-  if (intersects.length > 0) {
-    let obj = intersects[0].object;
-    while (obj && !obj.userData?.Selectable) {
-      obj = obj.parent;
-    }
-    if (obj) {
-      selectObject(obj);
-    }
-  }
-});
-
-// Vòng sáng đánh dấu đối tượng đang được chọn dưới sàn
-const selectionRing = new THREE.Mesh(
-  new THREE.RingGeometry(2.2, 2.65, 32),
-  new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide })
-);
-selectionRing.rotation.x = -Math.PI / 2;
-selectionRing.position.y = 0.08;
-selectionRing.visible = false;
-scene.add(selectionRing);
-
-function selectObject(obj) {
-  state.selectedObject = obj;
-  renderStationList();
-  renderAGVList();
-  renderInspector();
-
-  floatingLabels.forEach((item) => {
-    item.el.classList.toggle('selected', item.targetObj === obj);
-  });
-
-  // Di chuyển tâm nhìn camera mượt mà tới đối tượng được chọn
-  const worldPos = new THREE.Vector3();
-  obj.getWorldPosition(worldPos);
-  animateCameraTarget(worldPos);
-}
-
-let desiredCamTarget = null;
-let desiredCamPos = null;
-
-function animateCameraTarget(targetVec, camPosVec = null) {
-  desiredCamTarget = targetVec.clone();
-  if (camPosVec) {
-    desiredCamPos = camPosVec.clone();
-  } else {
-    desiredCamPos = null;
-  }
-}
-
-function setCameraPreset(preset) {
-  state.cameraMode = preset;
-  document.querySelectorAll('.cam-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.cam === preset);
-  });
-
-  if (preset === 'overview') {
-    animateCameraTarget(new THREE.Vector3(2, 1.5, 0), new THREE.Vector3(-22, 34, 46));
-  } else if (preset === 'stamping') {
-    animateCameraTarget(new THREE.Vector3(-21, 2, 0), new THREE.Vector3(-34, 13, 18));
-  } else if (preset === 'paint') {
-    animateCameraTarget(new THREE.Vector3(7, 2, 0), new THREE.Vector3(2, 13, 19));
-  } else if (preset === 'qc') {
-    animateCameraTarget(new THREE.Vector3(34, 2, 0), new THREE.Vector3(24, 14, 22));
-  } else if (preset === 'topdown') {
-    animateCameraTarget(new THREE.Vector3(2, 0, 0), new THREE.Vector3(2, 68, 4));
-  }
-}
-
-// ==========================================
-// 12. CẬP NHẬT GIAO DIỆN HUD & INSPECTOR
-// ==========================================
-function renderStationList() {
-  const listEl = document.getElementById('station-list');
-  listEl.innerHTML = STATIONS.map((st) => {
-    const selObj = state.selectedObject;
-    const isSelected = selObj && selObj.userData?.id === st.id;
-    const statusText = st.status === 'ok' ? 'HOẠT ĐỘNG' : st.status === 'warn' ? 'CẢNH BÁO' : 'TẠM DỪNG';
-    return `
-      <div class="station-item ${isSelected ? 'active' : ''}" data-stid="${st.id}">
-        <div class="st-left">
-          <span class="st-index">${st.index}</span>
-          <div class="st-info">
-            <span class="st-name">${st.name}</span>
-            <span class="st-sub">${st.code} • Chu kỳ ${st.cycleTime}</span>
-          </div>
-        </div>
-        <span class="st-status ${st.status}">${statusText}</span>
-      </div>
-    `;
-  }).join('');
-
-  listEl.querySelectorAll('.station-item').forEach((el) => {
-    el.addEventListener('click', () => {
-      const mesh = stationMeshes.get(el.dataset.stid);
-      if (mesh) selectObject(mesh);
-    });
-  });
-}
-
-function renderAGVList() {
-  const listEl = document.getElementById('agv-list');
-  listEl.innerHTML = agvFleet.map((agv) => {
-    const d = agv.userData;
-    const isSel = state.selectedObject === agv;
-    return `
-      <div class="agv-card ${isSel ? 'active' : ''}" data-agvid="${d.id}">
-        <div class="agv-top">
-          <span>🤖 ${d.id}</span>
-          <span class="accent-emerald">${d.battery}%</span>
-        </div>
-        <div class="agv-task">${d.routeName}</div>
-      </div>
-    `;
-  }).join('');
-
-  listEl.querySelectorAll('.agv-card').forEach((el) => {
-    el.addEventListener('click', () => {
-      const target = agvFleet.find((a) => a.userData.id === el.dataset.agvid);
-      if (target) selectObject(target);
-    });
-  });
-}
-
-function renderInspector() {
-  const contentEl = document.getElementById('inspector-content');
-  const catEl = document.getElementById('insp-category');
-  const obj = state.selectedObject;
-
-  if (!obj) {
-    catEl.textContent = 'TRẠNG THÁI CHỌN 3D';
-    contentEl.innerHTML = `
-      <div style="color: var(--text-muted); font-size: 12px; line-height: 1.5; padding: 8px 0;">
-        💡 <strong>Mẹo điều khiển:</strong> Click trực tiếp vào bất kỳ <strong>Khung Xe Hơi</strong>, <strong>Cánh Tay Robot</strong>, <strong>Trạm Dây Chuyền</strong>, <strong>Xe Tự Hành AGV</strong> hoặc <strong>Kệ Kho</strong> nào trong không gian 3D để kiểm tra thông số thời gian thực và điều khiển.
-      </div>
-    `;
-    return;
-  }
-
-  const d = obj.userData;
-  if (d.type === 'station') {
-    const st = STATIONS.find((s) => s.id === d.id) || d;
-    catEl.textContent = 'TRẠM DÂY CHUYỀN SẢN XUẤT';
-    const isFault = st.status === 'fault';
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${st.name}</span>
-        <span class="insp-id">${st.code}</span>
-      </div>
-      <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">${st.description}</p>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Trạng thái</span><span class="m-val ${isFault ? 'accent-red' : 'accent-emerald'}">${isFault ? 'DỪNG BẢO TRÌ' : 'ĐANG CHẠY TỐT'}</span></div>
-        <div class="insp-metric"><span class="m-label">Chu kỳ Takt</span><span class="m-val">${st.cycleTime}</span></div>
-        <div class="insp-metric"><span class="m-label">Công suất điện</span><span class="m-val">${st.powerKw} kW</span></div>
-        <div class="insp-metric"><span class="m-label">Nhiệt độ cụm máy</span><span class="m-val">${st.temp}°C</span></div>
-      </div>
-      <div class="insp-actions">
-        <button id="btn-toggle-fault" class="insp-btn ${isFault ? '' : 'warn-btn'}">
-          ${isFault ? '🔧 Khôi Phục Vận Hành Trạm' : '⚡ Giả Lập Dừng Bảo Trì'}
-        </button>
-      </div>
-    `;
-    document.getElementById('btn-toggle-fault')?.addEventListener('click', () => {
-      st.status = st.status === 'fault' ? 'ok' : 'fault';
-      const lamp = obj.userData.beaconLamp;
-      if (lamp) {
-        lamp.material.color.setHex(st.status === 'fault' ? 0xef4444 : 0x10b981);
-      }
-      const dot = obj.userData.labelEl?.querySelector('.status-dot');
-      if (dot) {
-        dot.classList.toggle('fault', st.status === 'fault');
-      }
-      addLog(
-        st.status === 'fault'
-          ? `🚨 <strong>${st.name}</strong> chuyển sang chế độ Dừng Bảo Trì. Tốc độ chuyền giảm.`
-          : `✅ <strong>${st.name}</strong> đã hoàn tất bảo trì và hoạt động 100% công suất.`
-      );
-      renderStationList();
-      renderInspector();
-    });
-  } else if (d.type === 'car') {
-    catEl.textContent = 'PHƯƠNG TIỆN ĐANG LẮP RÁP';
-    const stageNames = [
-      '1/5: Khung Sàn Skateboard',
-      '2/5: Hàn Khung Vỏ BIW',
-      '3/5: Phun Sơn Nano Tĩnh Điện',
-      '4/5: Lắp Động Cơ, Pin & Bánh Xe',
-      '5/5: Lắp Kính, Đèn LED & Kiểm Định'
-    ];
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${d.model}</span>
-        <span class="insp-id">${d.id}</span>
-      </div>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Số khung VIN</span><span class="m-val">${d.vin}</span></div>
-        <div class="insp-metric"><span class="m-label">Tiến độ dây chuyền</span><span class="m-val accent-cyan">${Math.min(100, Math.round(d.progress))}%</span></div>
-        <div class="insp-metric"><span class="m-label">Màu sơn ngoại thất</span><span class="m-val" style="color:${d.colorHex}">${d.colorName}</span></div>
-        <div class="insp-metric"><span class="m-label">Công đoạn hiện tại</span><span class="m-val">${stageNames[d.stage]}</span></div>
-      </div>
-      <div class="insp-actions">
-        <button id="btn-cam-follow-this-car" class="insp-btn">🎥 Camera Đi Theo Xe Này</button>
-      </div>
-    `;
-    document.getElementById('btn-cam-follow-this-car')?.addEventListener('click', () => {
-      setCameraPreset('followCar');
-    });
-  } else if (d.type === 'robot') {
-    catEl.textContent = 'CÁNH TAY ROBOT 6 TRỤC';
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${d.name}</span>
-        <span class="insp-id">${d.id}</span>
-      </div>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Thuộc trạm</span><span class="m-val">${d.stationId}</span></div>
-        <div class="insp-metric"><span class="m-label">Chu kỳ hoàn tất</span><span class="m-val accent-emerald">${d.cycles.toLocaleString()}</span></div>
-        <div class="insp-metric"><span class="m-label">Nhiệt độ Servo</span><span class="m-val">${d.temp}°C</span></div>
-        <div class="insp-metric"><span class="m-label">Công suất tức thời</span><span class="m-val">${d.powerKw} kW</span></div>
-      </div>
-    `;
-  } else if (d.type === 'agv') {
-    catEl.textContent = 'ROBOT VẬN CHUYỂN TỰ HÀNH AGV';
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${d.name}</span>
-        <span class="insp-id">${d.id}</span>
-      </div>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Tuyến hoạt động</span><span class="m-val">${d.routeName}</span></div>
-        <div class="insp-metric"><span class="m-label">Dung lượng Pin</span><span class="m-val accent-emerald">${d.battery}%</span></div>
-        <div class="insp-metric"><span class="m-label">Vận tốc di chuyển</span><span class="m-val">${d.speedMps} m/s</span></div>
-        <div class="insp-metric"><span class="m-label">Hàng hóa chuyên chở</span><span class="m-val">${d.payload}</span></div>
-      </div>
-      <div class="insp-actions">
-        <button id="btn-cam-follow-this-agv" class="insp-btn">🎥 Camera Đi Theo AGV</button>
-      </div>
-    `;
-    document.getElementById('btn-cam-follow-this-agv')?.addEventListener('click', () => {
-      setCameraPreset('followAGV');
-    });
-  } else if (d.type === 'rack') {
-    catEl.textContent = 'KỆ KHO LINH KIỆN THÔNG MINH';
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${d.name}</span>
-        <span class="insp-id">${d.id}</span>
-      </div>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Độ lấp đầy kệ</span><span class="m-val accent-cyan">${d.capacity}</span></div>
-        <div class="insp-metric"><span class="m-label">Số lượng Pallet SKU</span><span class="m-val">${d.skuCount} kiện</span></div>
-        <div class="insp-metric" style="grid-column: span 2;"><span class="m-label">Nhóm linh kiện lưu trữ</span><span class="m-val">${d.category}</span></div>
-      </div>
-    `;
-  } else if (d.type === 'truck') {
-    catEl.textContent = 'ĐỘI XE CONTAINER XUẤT XƯỞNG';
-    contentEl.innerHTML = `
-      <div class="insp-title-row">
-        <span class="insp-title">${d.name}</span>
-        <span class="insp-id">DOCK #${d.dockNumber}</span>
-      </div>
-      <div class="insp-grid">
-        <div class="insp-metric"><span class="m-label">Trạng thái bến</span><span class="m-val accent-emerald">${d.state}</span></div>
-        <div class="insp-metric"><span class="m-label">Số lượng xe chuyên chở</span><span class="m-val">${d.loadedCars}</span></div>
-        <div class="insp-metric" style="grid-column: span 2;"><span class="m-label">Điểm đến giao hàng</span><span class="m-val">${d.destination}</span></div>
-      </div>
-      <div class="insp-actions">
-        <button id="btn-dispatch-selected-truck" class="insp-btn">🚛 Lệnh Xuất Bến Ngay</button>
-      </div>
-    `;
-    document.getElementById('btn-dispatch-selected-truck')?.addEventListener('click', () => {
-      if (d.state === 'DOCKED') {
-        d.state = 'DEPARTING';
-        addLog(`🚛 <strong>${d.name}</strong> bắt đầu rời cảng Dock #${d.dockNumber} đi ${d.destination}.`);
-        renderInspector();
-      }
-    });
-  }
-}
-
-function updateInventoryUI() {
-  document.getElementById('inv-steel-txt').textContent = `${state.inventory.steel}%`;
-  document.getElementById('inv-steel-bar').style.width = `${state.inventory.steel}%`;
-  document.getElementById('inv-battery-txt').textContent = `${state.inventory.battery}%`;
-  document.getElementById('inv-battery-bar').style.width = `${state.inventory.battery}%`;
-  document.getElementById('inv-chips-txt').textContent = `${state.inventory.chips}%`;
-  document.getElementById('inv-chips-bar').style.width = `${state.inventory.chips}%`;
-}
-
-function updateTopKPIs() {
-  document.getElementById('kpi-produced').textContent = state.producedCount.toLocaleString();
-  document.getElementById('kpi-wip').textContent = carsOnLine.length;
-
-  const hasFault = STATIONS.some((s) => s.status === 'fault');
-  const oeeEl = document.getElementById('kpi-oee');
-  oeeEl.textContent = hasFault ? '74.2%' : '96.4%';
-  oeeEl.className = `kpi-value ${hasFault ? 'accent-amber' : 'accent-emerald'}`;
-
-  const totalPower = STATIONS.reduce((acc, s) => acc + (s.status === 'fault' ? 40 : s.powerKw), 0);
-  document.getElementById('kpi-power').textContent = totalPower.toLocaleString();
-  document.getElementById('kpi-revenue').textContent = `$${state.revenueMillions.toFixed(2)}M`;
-}
-
-function addLog(htmlMsg) {
-  const logEl = document.getElementById('event-log');
-  const now = new Date();
-  const timeStr = now.toTimeString().slice(0, 8);
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `<span class="log-time">[${timeStr}]</span><span class="log-msg">${htmlMsg}</span>`;
-  logEl.prepend(entry);
-  while (logEl.children.length > 25) {
-    logEl.lastChild.remove();
-  }
-}
-
-// Cập nhật vị trí nhãn nổi 2D bám theo toạ độ 3D
-function updateFloatingLabels() {
+function updatePinMarkers() {
   const halfW = window.innerWidth / 2;
   const halfH = window.innerHeight / 2;
 
-  floatingLabels.forEach(({ targetObj, el, offset }) => {
-    const pos = new THREE.Vector3();
-    targetObj.getWorldPosition(pos);
-    pos.add(offset);
-    pos.project(camera);
+  pinMarkers.forEach(({ targetObj, el, offset }) => {
+    const wp = new THREE.Vector3();
+    targetObj.getWorldPosition(wp);
+    wp.add(offset);
+    wp.project(camera);
 
-    if (pos.z > 1) {
+    if (wp.z > 1) {
       el.style.display = 'none';
       return;
     }
-    const x = pos.x * halfW + halfW;
-    const y = -(pos.y * halfH) + halfH;
+
+    const x = wp.x * halfW + halfW;
+    const y = -(wp.y * halfH) + halfH;
     el.style.display = 'flex';
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
@@ -1136,113 +476,459 @@ function updateFloatingLabels() {
 }
 
 // ==========================================
-// 13. GẮN SỰ KIỆN NÚT BẤM ĐIỀU KHIỂN UI
+// 6. VÒNG LẶP MÔ PHỎNG SỐNG ĐỘNG (SIMULATION LOOP)
+// ==========================================
+function updateSimulation(dt, elapsed) {
+  if (state.paused) return;
+  const effDt = dt * state.simSpeed;
+
+  // 1. Di chuyển Xe Nâng (Forklifts) trong sân nhà máy
+  forkliftsList.forEach((fl) => {
+    const d = fl.userData;
+    const wps = d.waypoints;
+    const p0 = wps[d.wpIndex];
+    const p1 = wps[(d.wpIndex + 1) % wps.length];
+    const dist = p0.distanceTo(p1);
+
+    d.progress += (effDt * 3.2) / dist;
+    if (d.progress >= 1) {
+      d.progress = 0;
+      d.wpIndex = (d.wpIndex + 1) % wps.length;
+    }
+
+    const curr = wps[d.wpIndex];
+    const next = wps[(d.wpIndex + 1) % wps.length];
+    fl.position.lerpVectors(curr, next, d.progress);
+
+    const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+    fl.rotation.y = Math.atan2(-dir.z, dir.x);
+  });
+
+  // 2. Di chuyển các Xe Ô Tô trên dây chuyền bên trong nhà máy
+  assemblyCars.forEach((car) => {
+    car.userData.progress += effDt * 2.8;
+    if (car.userData.progress >= 100) {
+      car.userData.progress = 0;
+      const nextColor = CAR_COLORS[state.nextCarSeq % CAR_COLORS.length];
+      car.userData.colorHex = nextColor.hex;
+      car.userData.colorName = nextColor.name;
+      car.userData.id = `CAR-${state.nextCarSeq++}`;
+      DATA_STORE.site.stockOnHand += 1;
+      document.getElementById('kpi-stock-val').textContent = DATA_STORE.site.stockOnHand.toLocaleString();
+    }
+    updateCarPositionOnLine(car);
+  });
+
+  // 3. Cánh tay Robot lắp ráp chuyển động nhịp nhàng
+  assemblyRobots.forEach((bot) => {
+    const j = bot.userData.joints;
+    const t = elapsed * 2.6 * state.simSpeed + j.phase;
+    j.turret.rotation.y = Math.sin(t) * 0.65;
+    j.upperPivot.rotation.x = Math.cos(t * 1.4) * 0.35 * j.side;
+  });
+
+  // 4. Xe tải chạy trên làn đường phía trước
+  trucksList.forEach((trk) => {
+    if (trk.userData.motionState === 'CRUISING') {
+      trk.position.x -= effDt * 3.8;
+      if (trk.position.x < -52) {
+        trk.position.x = 52;
+      }
+    } else if (trk.userData.motionState === 'DEPARTING') {
+      trk.position.x -= effDt * 7.5;
+      if (trk.position.x < -52) {
+        trk.position.x = trk.userData.baseX;
+        trk.userData.motionState = 'PARKED';
+      }
+    }
+  });
+}
+
+// ==========================================
+// 7. CLICK TƯƠNG TÁC 3D & ĐỒNG BỘ UI DỮ LIỆU
+// ==========================================
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let downPos = { x: 0, y: 0 };
+
+const selectionRing = new THREE.Mesh(
+  new THREE.RingGeometry(2.3, 2.75, 36),
+  new THREE.MeshBasicMaterial({ color: 0x2563eb, side: THREE.DoubleSide })
+);
+selectionRing.rotation.x = -Math.PI / 2;
+selectionRing.position.y = 0.06;
+selectionRing.visible = false;
+scene.add(selectionRing);
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  downPos = { x: e.clientX, y: e.clientY };
+});
+
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 6) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(selectableObjects, true);
+
+  if (hits.length > 0) {
+    let obj = hits[0].object;
+    while (obj && !obj.userData?.Selectable) {
+      obj = obj.parent;
+    }
+    if (obj) {
+      selectObject3D(obj);
+    }
+  }
+});
+
+let camGoalTarget = null;
+let camGoalPos = null;
+
+function flyCameraTo(targetVec, posVec = null) {
+  camGoalTarget = targetVec.clone();
+  camGoalPos = posVec ? posVec.clone() : null;
+}
+
+function selectObject3D(obj) {
+  state.selectedObj = obj;
+
+  pinMarkers.forEach((m) => {
+    m.el.classList.toggle('selected', m.targetObj === obj);
+  });
+
+  const wp = new THREE.Vector3();
+  obj.getWorldPosition(wp);
+  flyCameraTo(wp);
+
+  // Nếu chọn Ô tô hoặc Robot bên trong xưởng thì tự động bật mở mái X-Ray để nhìn rõ
+  if (obj.userData.type === 'car' || obj.userData.type === 'robot') {
+    setRoofCutaway(true);
+  }
+
+  renderRightInspectorCard();
+  renderBottomTabs();
+}
+
+function setRoofCutaway(open) {
+  state.roofCutaway = open;
+  if (factoryBuilding?.userData?.roofGroup) {
+    factoryBuilding.userData.roofGroup.visible = !open;
+  }
+  const btn = document.getElementById('btn-cutaway');
+  btn.classList.toggle('active', open);
+  btn.textContent = open ? '🏠 Đóng Mái Xưởng' : '🏠 Mở Mái Xưởng (X-Ray)';
+}
+
+function renderRightInspectorCard() {
+  const obj = state.selectedObj;
+  const tagEl = document.getElementById('insp-tag');
+  const titleEl = document.getElementById('insp-title');
+  const subEl = document.getElementById('insp-subtitle');
+  const badgeEl = document.getElementById('insp-status-badge');
+  const sumEl = document.getElementById('insp-status-summary');
+
+  if (!obj || obj.userData.type === 'plant') {
+    tagEl.textContent = 'DEPOT • PLT-01';
+    titleEl.textContent = DATA_STORE.site.name;
+    subEl.textContent = DATA_STORE.site.address;
+    badgeEl.textContent = 'Operational';
+    badgeEl.className = 'status-badge green';
+    sumEl.textContent = '2 docked • 1 arriving • 6 cars on line';
+
+    document.getElementById('m1-label').textContent = 'Stock on hand';
+    document.getElementById('m1-val').textContent = DATA_STORE.site.stockOnHand.toLocaleString();
+    document.getElementById('m1-max').textContent = '/ 1,800';
+    document.getElementById('m2-label').textContent = 'Truck bays';
+    document.getElementById('m2-val').textContent = '2';
+    document.getElementById('m2-max').textContent = '/ 3 busy';
+    return;
+  }
+
+  const d = obj.userData;
+  if (d.type === 'truck') {
+    tagEl.textContent = `TRUCK • ${d.code}`;
+    titleEl.textContent = d.name;
+    subEl.textContent = `Điểm đến: ${d.destination}`;
+    badgeEl.textContent = d.state;
+    badgeEl.className = `status-badge ${d.state === 'Loading' ? 'green' : 'blue'}`;
+    sumEl.textContent = `Vị trí: ${d.bay} • Tiến độ: ${d.progressText}`;
+
+    document.getElementById('m1-label').textContent = ' Tải trọng lô xe';
+    document.getElementById('m1-val').textContent = d.progressText;
+    document.getElementById('m1-max').textContent = 'kiện xe';
+  } else if (d.type === 'forklift') {
+    tagEl.textContent = `FORKLIFT • ${d.id}`;
+    titleEl.textContent = d.name;
+    subEl.textContent = `Người lái: ${d.operator}`;
+    badgeEl.textContent = d.status;
+    badgeEl.className = 'status-badge green';
+    sumEl.textContent = d.taskDesc;
+
+    document.getElementById('m1-label').textContent = 'Dung lượng Pin EV';
+    document.getElementById('m1-val').textContent = `${d.battery}%`;
+    document.getElementById('m1-max').textContent = 'Lithium';
+  } else if (d.type === 'car') {
+    tagEl.textContent = `ASSEMBLY LINE • ${d.id}`;
+    titleEl.textContent = `${d.model} (${d.colorName})`;
+    subEl.textContent = `Số khung VIN: ${d.vin}`;
+    badgeEl.textContent = `Hoàn thiện ${Math.round(d.progress)}%`;
+    badgeEl.className = 'status-badge blue';
+    sumEl.textContent = `Công đoạn ${d.stage + 1}/4 trên băng chuyền chính`;
+  } else if (d.type === 'pallet' || d.type === 'rack' || d.type === 'container') {
+    tagEl.textContent = `STORAGE • ${d.id}`;
+    titleEl.textContent = d.name;
+    subEl.textContent = 'Khu vực lưu trữ & tập kết vật tư';
+    badgeEl.textContent = d.status || 'In Stock';
+    badgeEl.className = 'status-badge green';
+    sumEl.textContent = d.contents || `${d.units || 144} đơn vị linh kiện sẵn sàng`;
+  } else if (d.type === 'robot') {
+    tagEl.textContent = `ROBOTICS • ${d.id}`;
+    titleEl.textContent = d.name;
+    subEl.textContent = 'Cánh tay Robot KUKA 6 trục tự động';
+    badgeEl.textContent = 'Operational';
+    badgeEl.className = 'status-badge green';
+    sumEl.textContent = `Đã hoàn thành ${d.cycles.toLocaleString()} chu kỳ lắp ráp`;
+  }
+}
+
+function renderBottomTabs() {
+  const listEl = document.getElementById('bottom-tabs-list');
+  const tab = state.activeBottomTab;
+
+  if (tab === 'docks') {
+    listEl.innerHTML = DATA_STORE.docks.map((dk) => `
+      <div class="tab-row" data-dockx="${dk.x}" data-dockz="${dk.z}">
+        <div class="tr-left">
+          <span class="tr-title">${dk.name}</span>
+          <span class="tr-sub">${dk.site}</span>
+        </div>
+        <div class="tr-mid">
+          <span class="dot-blue"></span>
+          <span>${dk.truckCode}</span>
+        </div>
+        <div class="tr-right">
+          <span class="status-badge ${dk.status === 'Loading' ? 'green' : 'blue'}">${dk.status}</span>
+          <span class="tr-sub">${dk.progress} ›</span>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.tab-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const x = parseFloat(row.dataset.dockx);
+        const z = parseFloat(row.dataset.dockz);
+        flyCameraTo(new THREE.Vector3(x, 2.5, z), new THREE.Vector3(x - 8, 12, z + 18));
+      });
+    });
+  } else if (tab === 'cars') {
+    listEl.innerHTML = assemblyCars.map((car) => {
+      const d = car.userData;
+      return `
+        <div class="tab-row" data-carid="${d.id}">
+          <div class="tr-left">
+            <span class="tr-title">${d.id} • ${d.model}</span>
+            <span class="tr-sub">${d.vin}</span>
+          </div>
+          <div class="tr-mid">
+            <span class="dot-blue" style="background:${d.colorHex}"></span>
+            <span>${d.colorName}</span>
+          </div>
+          <div class="tr-right">
+            <span class="status-badge blue">${Math.round(d.progress)}%</span>
+            <span class="tr-sub">Xem 3D ›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.tab-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const targetCar = assemblyCars.find((c) => c.userData.id === row.dataset.carid);
+        if (targetCar) {
+          setRoofCutaway(true);
+          selectObject3D(targetCar);
+        }
+      });
+    });
+  } else if (tab === 'forklifts') {
+    listEl.innerHTML = forkliftsList.map((fl) => {
+      const d = fl.userData;
+      return `
+        <div class="tab-row" data-flid="${d.id}">
+          <div class="tr-left">
+            <span class="tr-title">${d.id}</span>
+            <span class="tr-sub">Người lái: ${d.operator}</span>
+          </div>
+          <div class="tr-mid">
+            <span class="dot-blue"></span>
+            <span>${d.taskDesc}</span>
+          </div>
+          <div class="tr-right">
+            <span class="status-badge green">${d.battery}% Pin</span>
+            <span class="tr-sub">›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.tab-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const targetFl = forkliftsList.find((f) => f.userData.id === row.dataset.flid);
+        if (targetFl) selectObject3D(targetFl);
+      });
+    });
+  } else if (tab === 'trucks') {
+    listEl.innerHTML = trucksList.map((trk) => {
+      const d = trk.userData;
+      return `
+        <div class="tab-row" data-trkid="${d.id}">
+          <div class="tr-left">
+            <span class="tr-title">${d.code}</span>
+            <span class="tr-sub">${d.company}</span>
+          </div>
+          <div class="tr-mid">
+            <span class="dot-blue"></span>
+            <span>${d.destination}</span>
+          </div>
+          <div class="tr-right">
+            <span class="status-badge ${d.state === 'Loading' ? 'green' : 'blue'}">${d.state}</span>
+            <span class="tr-sub">›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.tab-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const targetTrk = trucksList.find((t) => t.userData.id === row.dataset.trkid);
+        if (targetTrk) selectObject3D(targetTrk);
+      });
+    });
+  }
+}
+
+// ==========================================
+// 8. SỰ KIỆN NÚT BẤM GIAO DIỆN & TÌM KIẾM
 // ==========================================
 function setupUIEvents() {
+  // Bật/tắt mở mái nhà xưởng (Cutaway X-Ray)
+  document.getElementById('btn-cutaway').addEventListener('click', () => {
+    setRoofCutaway(!state.roofCutaway);
+    if (state.roofCutaway) {
+      flyCameraTo(new THREE.Vector3(0, 1.5, -4.5), new THREE.Vector3(-12, 22, 18));
+    }
+  });
+
   // Tốc độ mô phỏng
   document.getElementById('btn-pause').addEventListener('click', (e) => {
     state.paused = !state.paused;
     e.currentTarget.textContent = state.paused ? '▶' : '⏸';
     e.currentTarget.classList.toggle('active', state.paused);
-    addLog(state.paused ? '⏸ Đã tạm dừng dây chuyền mô phỏng.' : '▶️ Tiếp tục vận hành dây chuyền nhà máy.');
   });
 
-  document.querySelectorAll('[data-speed]').forEach((btn) => {
+  document.querySelectorAll('.spd-btn[data-speed]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.simSpeed = Number(btn.dataset.speed);
       state.paused = false;
       document.getElementById('btn-pause').textContent = '⏸';
-      document.getElementById('btn-pause').classList.remove('active');
-      document.querySelectorAll('[data-speed]').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.spd-btn[data-speed]').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      addLog(`⚡ Đã chuyển tốc độ mô phỏng sang <strong>${state.simSpeed}x</strong>.`);
     });
   });
 
-  // Chế độ Ca Ngày / Ca Đêm
-  document.getElementById('btn-daynight').addEventListener('click', (e) => {
-    state.nightShift = !state.nightShift;
-    if (state.nightShift) {
-      scene.background.setHex(0x04070d);
-      scene.fog.color.setHex(0x04070d);
-      dirLight.intensity = 0.45;
-      hemiLight.intensity = 0.35;
-      stationSpotLights.forEach((l) => (l.intensity = 2.6));
-      e.currentTarget.textContent = '☀️ Ca Ngày';
-      addLog('🌙 Chuyển sang <strong>Chế độ Ca Đêm</strong>: Bật hệ thống đèn LED cao áp nội xưởng.');
-    } else {
-      scene.background.setHex(0x090d16);
-      scene.fog.color.setHex(0x090d16);
-      dirLight.intensity = 1.65;
-      hemiLight.intensity = 0.85;
-      stationSpotLights.forEach((l) => (l.intensity = 1.5));
-      e.currentTarget.textContent = '🌙 Ca Đêm';
-      addLog('☀️ Chuyển sang <strong>Chế độ Ca Ngày</strong>: Ánh sáng tiêu chuẩn.');
-    }
+  // Thanh công cụ Camera bên phải
+  document.getElementById('cam-zoom-in').addEventListener('click', () => {
+    camera.position.lerp(controls.target, 0.22);
+  });
+  document.getElementById('cam-zoom-out').addEventListener('click', () => {
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target).multiplyScalar(1.25);
+    camera.position.copy(controls.target).add(dir);
+  });
+  document.getElementById('cam-rotate-left').addEventListener('click', () => {
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.45);
+    camera.position.copy(controls.target).add(offset);
+  });
+  document.getElementById('cam-rotate-right').addEventListener('click', () => {
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.45);
+    camera.position.copy(controls.target).add(offset);
+  });
+  document.getElementById('cam-home').addEventListener('click', () => {
+    setRoofCutaway(false);
+    flyCameraTo(new THREE.Vector3(-2, 2.5, 2), new THREE.Vector3(-28, 30, 44));
+  });
+  document.getElementById('cam-interior').addEventListener('click', () => {
+    setRoofCutaway(true);
+    flyCameraTo(new THREE.Vector3(0, 1.5, -4.5), new THREE.Vector3(-10, 19, 14));
   });
 
-  // Chọn màu sơn xe mới
-  document.querySelectorAll('.color-swatch').forEach((swatch) => {
-    swatch.addEventListener('click', () => {
-      document.querySelectorAll('.color-swatch').forEach((s) => s.classList.remove('active'));
-      swatch.classList.add('active');
-      state.selectedSpawnColor = {
-        hex: swatch.dataset.color,
-        name: swatch.dataset.name
-      };
-    });
-  });
-
-  // Nút Đưa khung xe mới vào chuyền
-  document.getElementById('btn-spawn-car').addEventListener('click', () => {
-    const model = document.getElementById('select-model').value;
-    const newCar = spawnCarOnLine({
-      model,
-      colorHex: state.selectedSpawnColor.hex,
-      colorName: state.selectedSpawnColor.name,
-      initialProgress: 0
-    });
-    if (newCar) {
-      selectObject(newCar);
-    }
-  });
-
-  // Tiếp liệu kho bằng AGV
-  document.getElementById('btn-resupply').addEventListener('click', () => {
-    state.inventory.steel = Math.min(100, state.inventory.steel + 14);
-    state.inventory.battery = Math.min(100, state.inventory.battery + 18);
-    state.inventory.chips = Math.min(100, state.inventory.chips + 12);
-    updateInventoryUI();
-    addLog('📦 Đội xe tự hành <strong>AGV</strong> đã nạp đầy vật tư Thép, Pin Lithium & Vi mạch AI vào kệ.');
-  });
-
-  // Điều xe tải xuất hàng
-  document.getElementById('btn-dispatch-truck').addEventListener('click', () => {
-    const dockedTruck = cargoTrucks.find((t) => t.userData.state === 'DOCKED');
-    if (dockedTruck) {
-      dockedTruck.userData.state = 'DEPARTING';
-      addLog(`🚛 Lệnh điều phối: <strong>${dockedTruck.userData.name}</strong> xuất bến giao lô xe thành phẩm!`);
-      selectObject(dockedTruck);
-    } else {
-      addLog('ℹ️ Cả 2 xe Container đang trên đường vận chuyển và sẽ sớm quay lại Dock.');
-    }
-  });
-
-  // Đóng Inspector
-  document.getElementById('btn-close-inspector').addEventListener('click', () => {
-    state.selectedObject = null;
+  // Reset về tổng quan nhà máy
+  document.getElementById('btn-reset-selection').addEventListener('click', () => {
+    state.selectedObj = null;
     selectionRing.visible = false;
-    floatingLabels.forEach((l) => l.el.classList.remove('selected'));
-    renderStationList();
-    renderAGVList();
-    renderInspector();
+    pinMarkers.forEach((m) => m.el.classList.remove('selected'));
+    renderRightInspectorCard();
+    flyCameraTo(new THREE.Vector3(-2, 2.5, 2), new THREE.Vector3(-28, 30, 44));
   });
 
-  // Các nút chuyển góc nhìn Camera
-  document.querySelectorAll('.cam-btn').forEach((btn) => {
+  // Nút Đưa xe mới vào chuyền (mở mái nhà máy và nhảy tới đầu chuyền)
+  document.getElementById('btn-spawn-car').addEventListener('click', () => {
+    setRoofCutaway(true);
+    const firstCar = assemblyCars[0];
+    if (firstCar) {
+      selectObject3D(firstCar);
+    }
+  });
+
+  // Nút Điều xe tải xuất bến
+  document.getElementById('btn-dispatch-truck').addEventListener('click', () => {
+    const mainTruck = trucksList[0];
+    if (mainTruck) {
+      mainTruck.userData.motionState = 'DEPARTING';
+      DATA_STORE.site.outboundToday += 1;
+      document.getElementById('m3-val').textContent = DATA_STORE.site.outboundToday;
+      selectObject3D(mainTruck);
+    }
+  });
+
+  // Click thẻ Shipment dưới đáy để focus vào xe tải TRK-2051
+  document.getElementById('ship-summary-box').addEventListener('click', () => {
+    if (trucksList[0]) selectObject3D(trucksList[0]);
+  });
+
+  // Chuyển đổi các Tab góc phải dưới (Docks / Chuyền Xe / Xe Nâng / Xe Tải)
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      setCameraPreset(btn.dataset.cam);
+      state.activeBottomTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderBottomTabs();
     });
+  });
+
+  // Ô tìm kiếm nhanh trên thanh Navbar
+  const searchInput = document.getElementById('search-input');
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) return;
+      const match = selectableObjects.find((obj) => {
+        const d = obj.userData;
+        return (
+          d.id?.toLowerCase().includes(q) ||
+          d.name?.toLowerCase().includes(q) ||
+          d.company?.toLowerCase().includes(q)
+        );
+      });
+      if (match) {
+        selectObject3D(match);
+      }
+    }
   });
 
   window.addEventListener('resize', () => {
@@ -1253,24 +939,16 @@ function setupUIEvents() {
 }
 
 // ==========================================
-// 14. KHỞI CHẠY ỨNG DỤNG & VÒNG LẶP RENDER
+// 9. KHỞI CHẠY ỨNG DỤNG
 // ==========================================
-buildFactoryEnvironment();
-buildProductionStations();
-buildLogisticsAndWarehouse();
-seedInitialCars();
+buildCampusGround();
+buildInteriorAssemblyLine();
+buildExteriorYardObjects();
 setupUIEvents();
-
-renderStationList();
-renderAGVList();
-renderInspector();
-updateInventoryUI();
-
-addLog('🏭 Hệ thống <strong>AutoForge 3D Digital Twin</strong> đã khởi tạo thành công.');
-addLog('🤖 10 cánh tay Robot KUKA & 4 xe tự hành AGV đang đồng bộ thời gian thực.');
+renderRightInspectorCard();
+renderBottomTabs();
 
 const clock = new THREE.Clock();
-let uiUpdateTimer = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -1280,57 +958,30 @@ function animate() {
 
   updateSimulation(dt, elapsed);
 
-  // Cập nhật vòng sáng dưới đối tượng được chọn
-  if (state.selectedObject) {
+  if (state.selectedObj && state.selectedObj.userData.type !== 'plant') {
     const wp = new THREE.Vector3();
-    state.selectedObject.getWorldPosition(wp);
-    selectionRing.position.set(wp.x, 0.08, wp.z);
-    selectionRing.rotation.z = elapsed * 1.5;
+    state.selectedObj.getWorldPosition(wp);
+    selectionRing.position.set(wp.x, 0.06, wp.z);
+    selectionRing.rotation.z = elapsed * 1.6;
     selectionRing.visible = true;
   } else {
     selectionRing.visible = false;
   }
 
-  // Chế độ Camera đi theo Xe hoặc AGV
-  if (state.cameraMode === 'followCar' && carsOnLine.length > 0) {
-    const targetCar =
-      state.selectedObject?.userData?.type === 'car' ? state.selectedObject : carsOnLine[0];
-    const cp = new THREE.Vector3();
-    targetCar.getWorldPosition(cp);
-    controls.target.lerp(new THREE.Vector3(cp.x + 2, 1.5, cp.z), 0.08);
-    camera.position.lerp(new THREE.Vector3(cp.x - 9, 6.5, cp.z + 11), 0.05);
-  } else if (state.cameraMode === 'followAGV' && agvFleet.length > 0) {
-    const targetAgv =
-      state.selectedObject?.userData?.type === 'agv' ? state.selectedObject : agvFleet[0];
-    const ap = new THREE.Vector3();
-    targetAgv.getWorldPosition(ap);
-    controls.target.lerp(new THREE.Vector3(ap.x, 1.0, ap.z), 0.1);
-    camera.position.lerp(new THREE.Vector3(ap.x - 7, 6.0, ap.z + 8), 0.06);
-  } else if (desiredCamTarget) {
-    controls.target.lerp(desiredCamTarget, 0.08);
-    if (desiredCamPos) {
-      camera.position.lerp(desiredCamPos, 0.06);
-      if (camera.position.distanceTo(desiredCamPos) < 0.35) {
-        desiredCamPos = null;
-      }
+  if (camGoalTarget) {
+    controls.target.lerp(camGoalTarget, 0.08);
+    if (camGoalPos) {
+      camera.position.lerp(camGoalPos, 0.06);
+      if (camera.position.distanceTo(camGoalPos) < 0.4) camGoalPos = null;
     }
-    if (controls.target.distanceTo(desiredCamTarget) < 0.15 && !desiredCamPos) {
-      desiredCamTarget = null;
+    if (controls.target.distanceTo(camGoalTarget) < 0.15 && !camGoalPos) {
+      camGoalTarget = null;
     }
   }
 
   controls.update();
   renderer.render(scene, camera);
-  updateFloatingLabels();
-
-  uiUpdateTimer += dt;
-  if (uiUpdateTimer > 0.35) {
-    uiUpdateTimer = 0;
-    updateTopKPIs();
-    if (state.selectedObject?.userData?.type === 'car') {
-      renderInspector();
-    }
-  }
+  updatePinMarkers();
 }
 
 animate();

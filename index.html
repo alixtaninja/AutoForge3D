@@ -3,198 +3,324 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AutoForge 3D — Mô Phỏng Nhà Máy Sản Xuất Xe Hơi</title>
-  <meta name="description" content="Mô phỏng Digital Twin nhà máy sản xuất ô tô 3D thời gian thực bằng Three.js với phong cách Strategy Tycoon Game." />
+  <title>AutoTrack 3D — Quản Lý Nhà Máy Sản Xuất Xe Hơi (WareTrack Style)</title>
+  <meta name="description" content="Ứng dụng quản lý & mô phỏng nhà máy sản xuất xe hơi 3D theo phong cách game chiến thuật tươi sáng (WareTrack style)." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div id="canvas-container" aria-label="Khung nhìn 3D nhà máy sản xuất ô tô"></div>
+  <!-- Khung cảnh 3D chính -->
+  <div id="canvas-container" aria-label="Khung nhìn 3D nhà máy sản xuất xe hơi"></div>
 
-  <!-- Nhãn nổi 3D trên các đối tượng -->
+  <!-- Nhãn ghim 3D (Pin Markers & Badges) -->
   <div id="labels-container"></div>
 
-  <!-- Thanh điều khiển & chỉ số trên cùng (Top Command Bar) -->
-  <header class="hud-top">
-    <div class="brand-block">
-      <div class="brand-logo">
-        <span class="pulse-dot"></span>
-        <h1>AUTOFORGE <span>3D</span></h1>
+  <!-- Thanh điều hướng trên cùng (Top White Navbar giống WareTrack) -->
+  <header class="top-navbar">
+    <div class="nav-brand">
+      <div class="cube-logo">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <path d="M16 2L30 10V22L16 30L2 22V10L16 2Z" fill="#2563EB"/>
+          <path d="M16 2L30 10L16 18L2 10L16 2Z" fill="#60A5FA"/>
+          <path d="M16 18V30L30 22V10L16 18Z" fill="#1D4ED8"/>
+        </svg>
       </div>
-      <span class="brand-sub">GIGAFACTORY DIGITAL TWIN // LINE-A1</span>
+      <span class="brand-title">AutoTrack</span>
     </div>
 
-    <div class="kpi-strip">
-      <div class="kpi-card">
-        <span class="kpi-label">XE XUẤT XƯỞNG</span>
-        <div class="kpi-val-wrap">
-          <span id="kpi-produced" class="kpi-value">142</span>
-          <span class="kpi-unit">chiếc</span>
-        </div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">ĐANG LẮP RÁP (WIP)</span>
-        <div class="kpi-val-wrap">
-          <span id="kpi-wip" class="kpi-value">6</span>
-          <span class="kpi-unit">xe</span>
-        </div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">HIỆU SUẤT OEE</span>
-        <div class="kpi-val-wrap">
-          <span id="kpi-oee" class="kpi-value accent-emerald">96.4%</span>
-          <span id="kpi-takt" class="kpi-unit">Takt: 14s</span>
-        </div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">ĐIỆN NĂNG TIÊU THỤ</span>
-        <div class="kpi-val-wrap">
-          <span id="kpi-power" class="kpi-value accent-amber">1,480</span>
-          <span class="kpi-unit">kW</span>
-        </div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">DOANH THU LÔ</span>
-        <div class="kpi-val-wrap">
-          <span id="kpi-revenue" class="kpi-value accent-cyan">$6.39M</span>
-        </div>
-      </div>
+    <div class="nav-search">
+      <svg class="search-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="9" r="6"></circle>
+        <path d="M13.5 13.5L17 17"></path>
+      </svg>
+      <input id="search-input" type="text" placeholder="Tìm trạm lắp ráp, xe tải, xe nâng, lô xe xuất xưởng..." />
+      <kbd class="search-Shortcut">/</kbd>
     </div>
 
-    <div class="sim-controls">
-      <div class="speed-group" role="group" aria-label="Tốc độ mô phỏng">
-        <button id="btn-pause" class="ctrl-btn" title="Tạm dừng / Tiếp tục">⏸</button>
-        <button id="btn-speed-1" class="ctrl-btn active" data-speed="1">1x</button>
-        <button id="btn-speed-2" class="ctrl-btn" data-speed="2">2x</button>
-        <button id="btn-speed-4" class="ctrl-btn" data-speed="4">4x</button>
+    <div class="nav-right">
+      <div class="site-selector" id="btn-site-selector" title="Chuyển góc nhìn tổng thể nhà máy">
+        <span class="site-badge">PLT-01</span>
+        <div class="site-info">
+          <span class="site-name">Riverside Auto Plant</span>
+          <span class="site-meta" id="nav-site-meta">84% công suất • 2/3 bến đang bốc hàng</span>
+        </div>
+        <span class="chevron">▾</span>
       </div>
-      <button id="btn-daynight" class="ctrl-btn mode-btn" title="Chuyển đổi Ca Ngày / Ca Đêm">🌙 Ca Đêm</button>
+
+      <button id="btn-cutaway" class="pill-toggle active" title="Bật/Tắt mái nhà máy để nhìn xuyên vào dây chuyền Robot bên trong">
+        🏠 Mở Mái Xưởng (X-Ray)
+      </button>
+
+      <div class="live-clock-pill">
+        <span class="live-dot"></span>
+        <span>Live</span>
+        <strong id="live-clock">09:40</strong>
+      </div>
+
+      <div class="speed-pills">
+        <button id="btn-pause" class="spd-btn" title="Tạm dừng / Tiếp tục">⏸</button>
+        <button class="spd-btn active" data-speed="1">1×</button>
+        <button class="spd-btn" data-speed="2">2×</button>
+        <button class="spd-btn" data-speed="4">4×</button>
+      </div>
+
+      <div class="user-profile">
+        <div class="avatar">AC</div>
+        <div class="user-text">
+          <span class="u-name">Alex Chen</span>
+          <span class="u-role">Giám Đốc Nhà Máy</span>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- Sidebar Trái: Dây chuyền & Đội xe AGV & Nhật ký -->
-  <aside class="hud-left">
-    <section class="panel-box">
-      <div class="panel-header">
-        <h2>TRẠM DÂY CHUYỀN SẢN XUẤT</h2>
-        <span class="badge-live">TRỰC TIẾP</span>
+  <!-- 3 Thẻ KPI Nổi Góc Trái Trên (Floating KPI Cards) -->
+  <section class="floating-kpis">
+    <div class="kpi-card" id="kpi-card-stock">
+      <div class="kpi-icon blue-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.3L18.6 8 12 11.7 5.4 8 12 4.3zM5 9.8l6 3.3v6.6l-6-3.3V9.8zm8 9.9v-6.6l6-3.3v6.6l-6 3.3z"/>
+        </svg>
       </div>
-      <p class="panel-hint">Click vào trạm hoặc vật thể 3D để giám sát</p>
-      <div id="station-list" class="station-list"></div>
-    </section>
+      <div class="kpi-body">
+        <span class="kpi-title">Xe hoàn thiện & Linh kiện</span>
+        <div class="kpi-main">
+          <strong id="kpi-stock-val">1,412</strong>
+          <span class="kpi-trend up">↑ +18</span>
+        </div>
+        <span class="kpi-sub">lô kiện • PLT-01</span>
+      </div>
+    </div>
 
-    <section class="panel-box">
-      <div class="panel-header">
-        <h2>ĐỘI XE TỰ HÀNH AGV & LOGISTICS</h2>
-        <span id="agv-count-badge" class="badge-sub">4 Hoạt động</span>
+    <div class="kpi-card" id="kpi-card-trucks">
+      <div class="kpi-icon indigo-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>
       </div>
-      <div id="agv-list" class="agv-list"></div>
-    </section>
+      <div class="kpi-body">
+        <span class="kpi-title">Xe tải tại nhà máy</span>
+        <div class="kpi-main">
+          <strong id="kpi-trucks-val">3</strong>
+          <span class="kpi-trend up">↑ +1</span>
+        </div>
+        <span class="kpi-sub" id="kpi-trucks-sub">2 đang bốc hàng • 1 đang đến</span>
+      </div>
+    </div>
 
-    <section class="panel-box log-panel">
-      <div class="panel-header">
-        <h2>NHẬT KÝ ĐIỀU HÀNH NHÀ MÁY</h2>
+    <div class="kpi-card" id="kpi-card-otd">
+      <div class="kpi-icon sky-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+        </svg>
       </div>
-      <div id="event-log" class="event-log"></div>
-    </section>
+      <div class="kpi-body">
+        <span class="kpi-title">Hiệu suất xuất xưởng (OEE)</span>
+        <div class="kpi-main">
+          <strong id="kpi-oee-val">96.8%</strong>
+          <span class="kpi-trend up">↑ +0.4%</span>
+        </div>
+        <span class="kpi-sub">30 ngày qua • PLT-01</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Thanh công cụ Camera Dọc (Vertical Camera Toolbar giống WareTrack) -->
+  <div class="cam-toolbar">
+    <button id="cam-zoom-in" class="tool-btn" title="Phóng to (+)">+</button>
+    <button id="cam-zoom-out" class="tool-btn" title="Thu nhỏ (−)">−</button>
+    <button id="cam-rotate-left" class="tool-btn" title="Xoay trái">↺</button>
+    <button id="cam-rotate-right" class="tool-btn" title="Xoay phải">↻</button>
+    <button id="cam-home" class="tool-btn" title="Góc nhìn chuẩn Isometric">⌂</button>
+    <button id="cam-interior" class="tool-btn" title="Cận cảnh dây chuyền Robot">🤖</button>
+  </div>
+
+  <!-- Bảng điều khiển bên phải (Depot / Plant Card giống hệt WareTrack) -->
+  <aside class="right-depot-card" id="right-card">
+    <div class="depot-header">
+      <div class="depot-icon-box">
+        <span class="depot-mini-building">🏭</span>
+      </div>
+      <div class="depot-title-group">
+        <span class="depot-tag" id="insp-tag">PLANT • PLT-01</span>
+        <h2 id="insp-title">Riverside Auto Plant</h2>
+        <span class="depot-address" id="insp-subtitle">1200Forge Parkway, Khu Công Nghiệp Cao</span>
+      </div>
+      <button id="btn-reset-selection" class="target-btn" title="Về tổng quan nhà máy">⊕</button>
+    </div>
+
+    <div class="depot-status-row">
+      <span class="status-badge green" id="insp-status-badge">Operational</span>
+      <span class="status-summary" id="insp-status-summary">2 xe tại bến • 6 xe trên chuyền • 2 xe nâng</span>
+    </div>
+
+    <!-- 4 Ô chỉ số tóm tắt -->
+    <div class="metric-boxes">
+      <div class="m-box">
+        <span class="m-label" id="m1-label">Sản lượng ca ngày</span>
+        <div class="m-val"><strong id="m1-val">148</strong> <span id="m1-max">/ 180 xe</span></div>
+        <div class="m-bar"><div id="m1-fill" class="m-fill blue" style="width: 82%"></div></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m2-label">Cửa xuất hàng (Bays)</span>
+        <div class="m-val"><strong id="m2-val">3</strong> <span id="m2-max">/ 3 hoạt động</span></div>
+        <div class="m-bar"><div id="m2-fill" class="m-fill green" style="width: 100%"></div></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m3-label">Đã xuất bến hôm nay</span>
+        <div class="m-val"><strong id="m3-val">24</strong> <span id="m3-max">chuyến xe tải</span></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m4-label">Đang lắp trên chuyền</span>
+        <div class="m-val"><strong id="m4-val">6</strong> <span id="m4-max">ô tô điện</span></div>
+      </div>
+    </div>
+
+    <!-- Danh sách Linh kiện / Tồn kho (Inventory) -->
+    <div class="inventory-section">
+      <div class="sec-head">
+        <span>Tồn kho linh kiện & Phôi xe</span>
+        <span class="sec-unit">đơn vị</span>
+      </div>
+      <div class="inv-list" id="inventory-list">
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🔋</span>
+            <span class="inv-name">Cụm Pin Lithium 85kWh</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-1">1,906</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">⚙️</span>
+            <span class="inv-name">Động cơ điện Dual-Motor</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-2">412</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🛞</span>
+            <span class="inv-name">Bộ mâm lốp Sport 20"</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-3">212</strong>
+            <span class="stock-pill low-stock">Low Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🖥️</span>
+            <span class="inv-name">Cảm biến LiDAR & Chip AI</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-4">4,448</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hoạt động Xe nâng & Robot -->
+    <div class="fleet-progress-section">
+      <div class="sec-head">
+        <span>Đội xe nâng & Robot lắp ráp</span>
+        <span class="sec-unit" id="fleet-working-txt">2/2 xe nâng • 8/8 robot</span>
+      </div>
+      <div class="fleet-bar-row">
+        <span class="fl-code">FL-01</span>
+        <span class="fl-desc" id="fl-status-desc">Đang cấp kiện Pin vào Chuyền & Bay 1</span>
+        <div class="fl-mini-track"><div class="fl-mini-fill" id="fl-mini-fill" style="width: 78%"></div></div>
+        <strong class="fl-pct" id="fl-pct">78%</strong>
+      </div>
+    </div>
+
+    <!-- Nút điều hành nhanh -->
+    <div class="depot-actions">
+      <button id="btn-spawn-car" class="action-btn primary">+ Đưa Xe Mới Vào Chuyền</button>
+      <button id="btn-dispatch-truck" class="action-btn secondary">🚛 Điều Xe Tải Xuất Bến</button>
+    </div>
   </aside>
 
-  <!-- Sidebar Phải: Chi tiết Đối tượng 3D (Inspector) & Đặt hàng xe mới -->
-  <aside class="hud-right">
-    <section id="inspector-panel" class="panel-box inspector-box">
-      <div class="panel-header">
-        <h2 id="insp-category">CHI TIẾT ĐỐI TƯỢNG 3D</h2>
-        <button id="btn-close-inspector" class="icon-btn" title="Bỏ chọn">✕</button>
+  <!-- Thanh Tiến Trình Lô Hàng Góc Trái Dưới (Shipment / Production Tracking Stepper) -->
+  <section class="bottom-shipment-card">
+    <div class="ship-left">
+      <div class="ship-header">
+        <span class="ship-title-icon">🚗</span>
+        <strong id="track-header-title">Theo Dõi Lô Xe & Vận Chuyển</strong>
+        <span class="ship-sub-code" id="track-sub-code">TRK-2051 • AutoTrack Express</span>
       </div>
-      <div id="inspector-content" class="inspector-content">
-        <!-- Render động khi click vào đối tượng 3D -->
-      </div>
-    </section>
 
-    <section class="panel-box">
-      <div class="panel-header">
-        <h2>LỆNH SẢN XUẤT XE MỚI</h2>
-      </div>
-      <div class="spawn-controls">
-        <div class="form-row">
-          <label for="select-model">Dòng xe:</label>
-          <select id="select-model">
-            <option value="CyberSUV">Apex CyberSUV (Gầm cao)</option>
-            <option value="AeroSedan">Veloce AeroSedan (Thể thao)</option>
-            <option value="HyperGT">Quantum HyperGT (Siêu xe điện)</option>
-          </select>
+      <div class="stepper-wrap" id="stepper-wrap">
+        <div class="step-item done">
+          <div class="step-circle">✓</div>
+          <span class="step-name">Dập & Hàn Khung</span>
+          <span class="step-time">08:15</span>
         </div>
-        <div class="form-row">
-          <label>Màu sơn:</label>
-          <div class="color-picker" id="color-picker">
-            <button class="color-swatch active" data-color="#f97316" data-name="Cam Năng Lượng" style="background:#f97316" title="Cam Năng Lượng"></button>
-            <button class="color-swatch" data-color="#0ea5e9" data-name="Xanh Cyber" style="background:#0ea5e9" title="Xanh Cyber"></button>
-            <button class="color-swatch" data-color="#10b981" data-name="Xanh Ngọc Lục" style="background:#10b981" title="Xanh Ngọc Lục"></button>
-            <button class="color-swatch" data-color="#ef4444" data-name="Đỏ Đua" style="background:#ef4444" title="Đỏ Đua"></button>
-            <button class="color-swatch" data-color="#eab308" data-name="Vàng Solar" style="background:#eab308" title="Vàng Solar"></button>
-            <button class="color-swatch" data-color="#e2e8f0" data-name="Bạc Titanium" style="background:#e2e8f0" title="Bạc Titanium"></button>
-          </div>
+        <div class="step-line done"></div>
+        <div class="step-item done">
+          <div class="step-circle">✓</div>
+          <span class="step-name">Sơn & Lắp Động Cơ</span>
+          <span class="step-time">08:50</span>
         </div>
-        <button id="btn-spawn-car" class="primary-action-btn">+ ĐƯA KHUNG XE VÀO CHUYỀN</button>
-      </div>
-    </section>
-
-    <section class="panel-box">
-      <div class="panel-header">
-        <h2>KHO LINH KIỆN & BÃI XUẤT HÀNG</h2>
-      </div>
-      <div class="inventory-bars">
-        <div class="inv-item">
-          <div class="inv-top">
-            <span>Thép cuộn & Nhôm đúc</span>
-            <span id="inv-steel-txt">84%</span>
-          </div>
-          <div class="progress-track"><div id="inv-steel-bar" class="progress-fill fill-cyan" style="width: 84%"></div></div>
+        <div class="step-line active"></div>
+        <div class="step-item active">
+          <div class="step-circle pulse">📦</div>
+          <span class="step-name" id="step-active-label">Đang Bốc Lên Xe 4/6</span>
+          <span class="step-time">ETA 09:53</span>
         </div>
-        <div class="inv-item">
-          <div class="inv-top">
-            <span>Pin Lithium & Động cơ điện</span>
-            <span id="inv-battery-txt">72%</span>
-          </div>
-          <div class="progress-track"><div id="inv-battery-bar" class="progress-fill fill-emerald" style="width: 72%"></div></div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle">🚚</div>
+          <span class="step-name">Đang Vận Chuyển</span>
+          <span class="step-time">ETA 10:15</span>
         </div>
-        <div class="inv-item">
-          <div class="inv-top">
-            <span>Vi mạch AI & Cảm biến LiDAR</span>
-            <span id="inv-chips-txt">91%</span>
-          </div>
-          <div class="progress-track"><div id="inv-chips-bar" class="progress-fill fill-amber" style="width: 91%"></div></div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle">🏁</div>
+          <span class="step-name">Giao Tới Showroom</span>
+          <span class="step-time">ETA 11:00</span>
         </div>
       </div>
-      <div class="Button-row-sub">
-        <button id="btn-resupply" class="secondary-action-btn">📦 Gọi AGV Tiếp Liệu Kho</button>
-        <button id="btn-dispatch-truck" class="secondary-action-btn">🚛 Điều Xe Tải Xuất Hàng</button>
-      </div>
-    </section>
-  </aside>
-
-  <!-- Thanh điều hướng Camera góc nhìn dưới đáy (Bottom Camera Dock) -->
-  <footer class="hud-bottom">
-    <div class="cam-dock">
-      <span class="dock-label">CAMERA GÓC NHÌN:</span>
-      <button class="cam-btn active" data-cam="overview">🌐 Toàn Cảnh Nhà Máy</button>
-      <button class="cam-btn" data-cam="stamping">🔨 Trạm Dập & Hàn</button>
-      <button class="cam-btn" data-cam="paint">🎨 Buồng Sơn & Lắp Ráp</button>
-      <button class="cam-btn" data-cam="qc">🔬 Kiểm Định & Kho</button>
-      <button class="cam-btn" data-cam="followCar">🚗 Đi Theo Xe Trên Chuyền</button>
-      <button class="cam-btn" data-cam="followAGV">🤖 Đi Theo Robot AGV</button>
-      <button class="cam-btn" data-cam="topdown">📐 Bản Đồ 2.5D</button>
     </div>
-    <div class="controls-help">
-      <span>🖱️ Chuột trái: Xoay / Click chọn 3D</span>
-      <span>•</span>
-      <span>🖱️ Chuột phải: Di chuyển (Pan)</span>
-      <span>•</span>
-      <span>⚙️ Cuộn: Thu phóng</span>
+
+    <div class="ship-summary-box" id="ship-summary-box" title="Click để xem xe tải đang bốc hàng">
+      <div class="ship-truck-thumb">🚛</div>
+      <div class="ship-meta">
+        <strong id="ship-id">#SHP-78442</strong>
+        <span class="ship-dest" id="ship-dest">Tới: Showroom Trung Tâm</span>
+        <div class="ship-tags">
+          <span class="status-badge green" id="ship-badge">Loading</span>
+          <span class="ship-bay" id="ship-bay-info">PLT-01 • Bay 1 • còn 12 phút</span>
+        </div>
+      </div>
+      <span class="ship-arrow">›</span>
     </div>
-  </footer>
+  </section>
+
+  <!-- Bảng Tab Góc Phải Dưới (Docks / Forklifts / Assembly Line / Trucks) -->
+  <section class="bottom-tabs-card">
+    <div class="tabs-header">
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="docks">Docks <span id="tab-cnt-docks">3/3</span></button>
+        <button class="tab-btn" data-tab="cars">Chuyền Xe <span id="tab-cnt-cars">6</span></button>
+        <button class="tab-btn" data-tab="forklifts">Xe Nâng <span id="tab-cnt-fl">2/2</span></button>
+        <button class="tab-btn" data-tab="trucks">Xe Tải <span id="tab-cnt-trucks">3</span></button>
+      </div>
+      <span class="tabs-plant-label">Riverside Plant</span>
+    </div>
+
+    <div class="tabs-list" id="bottom-tabs-list">
+      <!-- Render động từ dữ liệu -->
+    </div>
+  </section>
 
   <script type="module" src="/src/main.js"></script>
 </body>
