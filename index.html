@@ -53,6 +53,10 @@
         🏠 Mở Mái Xưởng (X-Ray)
       </button>
 
+      <button id="btn-model-inspector" class="pill-toggle" title="Kiểm tra phân tích cấu trúc 3D & Khớp động học mô hình SimReady">
+        🔬 Soi Mô Hình 3D
+      </button>
+
       <div class="live-clock-pill">
         <span class="live-dot"></span>
         <span>Live</span>
@@ -321,6 +325,70 @@
       <!-- Render động từ dữ liệu -->
     </div>
   </section>
+
+  <!-- Hộp Thoại Chẩn Đoán & Soi Cấu Trúc Khớp Mô Hình 3D (SimReady 3D Asset Diagnostic Inspector) -->
+  <div id="inspector-modal" class="inspector-modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">3D DIAGNOSTICS & VERIFICATION</span>
+          <h3>Kiểm Tra & Phân Tích Mô Hình 3D Chỉ Định</h3>
+          <p>Soi cấu trúc Node, Mesh, Khớp động học (Kinematic Joints), Tọa độ gốc Pivot và Hướng trục tiến lui</p>
+        </div>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-left-view">
+          <div class="modal-view-controls">
+            <select id="modal-model-select" class="model-select">
+              <option value="vehicle_forklift_orange_a01">Xe Nâng Hàng Cam (vehicle_forklift_orange_a01.glb)</option>
+              <option value="vehicle_forklift_blue_a01">Xe Nâng Hàng Xanh (vehicle_forklift_blue_a01.glb)</option>
+              <option value="robotic_system_arm_b01">Cánh Tay Robot Lắp Ráp (robotic_system_arm_b01.glb)</option>
+              <option value="robotic_system_a01">Robot Đa Trục 4 Tay (robotic_system_a01.glb)</option>
+              <option value="conveyor_belt_a05">Mô-đun Băng Chuyền (conveyor_belt_a05.glb)</option>
+              <option value="engineAssembly_electric_engine_a01">Cụm Động Cơ Điện EV (engineAssembly_electric_engine_a01.glb)</option>
+              <option value="bodyPart_hood_c01">Nắp Capo Ô Tô (bodyPart_hood_c01.glb)</option>
+              <option value="wheelAssembly_tire_c01">Cụm Bánh Lốp Xe (wheelAssembly_tire_c01.glb)</option>
+            </select>
+            <div class="modal-view-modes">
+              <button id="modal-btn-wireframe" class="view-btn">Lưới Wireframe</button>
+              <button id="modal-btn-axes" class="view-btn active">Trục Tọa Độ XYZ</button>
+              <button id="modal-btn-anim" class="view-btn active">Chạy Thử Động Học</button>
+            </div>
+          </div>
+          <div id="modal-canvas-container" class="modal-canvas-box"></div>
+          <div class="modal-view-hint">
+            <span>💡 <strong>Chuột trái:</strong> Xoay 360° • <strong>Chuột phải:</strong> Trượt • <strong>Lăn chuột:</strong> Phóng to/thu nhỏ</span>
+          </div>
+        </div>
+
+        <div class="modal-right-info">
+          <div class="info-card">
+            <h4>Thông Số Kích Thước Bounding Box</h4>
+            <div id="diag-dims" class="diag-meta-grid">
+              <!-- Render động -->
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Khớp Động Học (Kinematics & Joints)</h4>
+            <div id="diag-joints" class="diag-joints-list">
+              <!-- Render động -->
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Cây Phân Cấp Node Hierarchy (Scenegraph)</h4>
+            <div id="diag-tree" class="diag-tree-box">
+              <!-- Render động -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

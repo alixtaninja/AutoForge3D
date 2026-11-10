@@ -327,6 +327,8 @@ export function buildPalletStack({ x = 0, z = 0, boxCount = 6, boxType = 'cardbo
 /**
  * Mô hình Xe Nâng Hàng (Forklift) sử dụng tài sản 3D NVIDIA SimReady GLB
  * (`vehicle_forklift_orange_a01.glb` & `vehicle_forklift_blue_a01.glb`)
+ * Chuẩn hóa trục: Mũi càng nâng nằm ở trục +Z nên khi rotationY = 0 xe hướng theo +Z.
+ * Trong vòng lặp mô phỏng, Math.atan2(dir.x, dir.z) sẽ làm xe nâng luôn quay đầu đúng hướng di chuyển.
  */
 export function buildForklift({ id, name, taskDesc, waypoints }) {
   const forklift = new THREE.Group();
@@ -344,31 +346,42 @@ export function buildForklift({ id, name, taskDesc, waypoints }) {
     status: 'Working',
     waypoints,
     wpIndex: 0,
-    progress: Math.random()
+    progress: Math.random(),
+    forkNode: null,
+    rudderNode: null
   };
 
-  // Mô hình NVIDIA SimReady Forklift có mũi càng hướng theo trục +Z, nên xoay -Math.PI/2 để khớp hướng di chuyển +X
   const simForklift = instantiateSimReady(assetKey, {
     targetHeight: 2.35,
-    rotationY: -Math.PI / 2
+    rotationY: 0 // Giữ nguyên trục gốc +Z chuẩn của NVIDIA SimReady
   });
 
   if (simForklift) {
     forklift.add(simForklift);
 
-    // Đặt thêm kiện hàng SimReady đang nâng trên càng xe nâng
+    // Tìm và trích xuất khớp Càng nâng (sm_fork_a01_obj_00) và Vô lăng lái (sm_rudder_a01_obj_00)
+    simForklift.traverse((child) => {
+      if (child.name === 'sm_fork_a01_obj_00') {
+        forklift.userData.forkNode = child;
+      } else if (child.name === 'sm_rudder_a01_obj_00') {
+        forklift.userData.rudderNode = child;
+      }
+    });
+
+    // Đặt kiện hàng SimReady trên càng nâng
     const carriedCargo = instantiateSimReady('box_cardboard_a01', { scale: 1.25 });
     if (carriedCargo) {
-      carriedCargo.position.set(1.15, 0.28, 0);
+      carriedCargo.position.set(0, 0.42, 1.45);
       forklift.add(carriedCargo);
+      forklift.userData.cargoNode = carriedCargo;
     }
     return forklift;
   }
 
   // Fallback nếu chưa tải GLB
   const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.32, metalness: 0.15 });
-  const body = new THREE.Mesh(new RoundedBoxGeometry(2.1, 1.05, 1.35, 3, 0.18), yellowMat);
-  body.position.set(-0.2, 0.75, 0);
+  const body = new THREE.Mesh(new RoundedBoxGeometry(1.35, 1.05, 2.1, 3, 0.18), yellowMat);
+  body.position.set(0, 0.75, 0);
   forklift.add(body);
   return forklift;
 }
@@ -670,6 +683,13 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
 /**
  * Cánh tay Robot lắp ráp công nghiệp sử dụng tài sản 3D NVIDIA SimReady GLB
  * (`robotic_system_arm_b01.glb` và `robotic_system_a01.glb`)
+ * Trích xuất từng khớp động học:
+ * - armBase_01_obj_00: Khớp xoay đế tròn (Base Yaw)
+ * - armheight_01_obj_00: Khớp nâng hạ trục đứng (Vertical Lift)
+ * - armShoulder_01_obj_00: Khớp vai chính (Main Shoulder Pitch)
+ * - armShoulder_02_obj_00: Khớp khuỷu tay (Elbow Pitch)
+ * - armShoulder_03_obj_00: Khớp cổ tay (Wrist Roll)
+ * - armShoulder_04_obj_00: Đầu công cụ hàn điểm / lắp ráp linh kiện (End-Effector)
  */
 export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
   const root = new THREE.Group();
@@ -678,37 +698,100 @@ export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
   const isCellBot = id.endsWith('2') || id.endsWith('4');
   const assetKey = isCellBot ? 'robotic_system_a01' : 'robotic_system_arm_b01';
 
+  // Xác định công đoạn của từng trạm robot trên dây chuyền
+  const stationTasks = {
+    'ROB-N1': { task: 'Hàn Khung Skateboard & Động Cơ', tool: 'weld', color: 0x60a5fa },
+    'ROB-S1': { task: 'Lắp Cụm Pin Lithium & Dây Điện', tool: 'gripper', color: 0x10b981 },
+    'ROB-N2': { task: 'Lắp Nắp Capo & Thân Xe', tool: 'gripper', color: 0xf59e0b },
+    'ROB-S2': { task: 'Hàn Thân Vỏ Body-in-White', tool: 'weld', color: 0x60a5fa },
+    'ROB-N3': { task: 'Sơn & Lắp Cửa Xe', tool: 'spray', color: 0x8b5cf6 },
+    'ROB-S3': { task: 'Lắp Bánh Xe & Siết Bu Lông', tool: 'bolt', color: 0xef4444 },
+    'ROB-N4': { task: 'Kiểm Tra Chất Lượng Laser & AI', tool: 'scanner', color: 0x06b6d4 },
+    'ROB-S4': { task: 'Kiểm Tra Khe Hở & Đánh Bóng', tool: 'buffer', color: 0xec4899 }
+  };
+  const taskInfo = stationTasks[id] || { task: 'Gia Công Lắp Ráp Ô Tô', tool: 'weld', color: 0x60a5fa };
+
   root.userData = {
     Selectable: true,
     type: 'robot',
     id,
     name,
     simreadyAsset: `${assetKey}.glb`,
-    status: 'Operational',
-    cycles: Math.floor(1400 + Math.random() * 500)
+    stationTask: taskInfo.task,
+    toolType: taskInfo.tool,
+    status: 'Working',
+    cycles: Math.floor(1400 + Math.random() * 500),
+    joints: null
   };
 
-  const turret = new THREE.Group();
-  root.add(turret);
+  // Bệ đỡ màu xám kim loại chắc chắn dưới chân robot
+  const basePedestal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.72, 0.85, 0.35, 18),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.7 })
+  );
+  basePedestal.position.y = 0.175;
+  basePedestal.receiveShadow = true;
+  root.add(basePedestal);
 
-  const upperPivot = new THREE.Group();
-  turret.add(upperPivot);
+  const robotWrapper = new THREE.Group();
+  robotWrapper.position.y = 0.35;
+  root.add(robotWrapper);
 
   const simRobot = instantiateSimReady(assetKey, {
-    targetHeight: isCellBot ? 2.65 : 2.35,
+    targetHeight: isCellBot ? 2.65 : 2.45,
     rotationY: side > 0 ? 0 : Math.PI
   });
 
+  const joints = {
+    side,
+    phase: Math.random() * Math.PI * 2,
+    toolType: taskInfo.tool,
+    baseRot: 0,
+    nodeBase: null,
+    nodeHeight: null,
+    nodeShoulder1: null,
+    nodeShoulder2: null,
+    nodeShoulder3: null,
+    nodeShoulder4: null,
+    sparkMesh: null
+  };
+
   if (simRobot) {
-    upperPivot.add(simRobot);
+    robotWrapper.add(simRobot);
+
+    // Bắt đúng các node khớp NVIDIA SimReady
+    simRobot.traverse((child) => {
+      const nm = child.name;
+      if (nm === 'armBase_01_obj_00') joints.nodeBase = child;
+      else if (nm === 'armheight_01_obj_00') joints.nodeHeight = child;
+      else if (nm === 'armShoulder_01_obj_00') joints.nodeShoulder1 = child;
+      else if (nm === 'armShoulder_02_obj_00') joints.nodeShoulder2 = child;
+      else if (nm === 'armShoulder_03_obj_00') joints.nodeShoulder3 = child;
+      else if (nm === 'armShoulder_04_obj_00') joints.nodeShoulder4 = child;
+    });
+
+    // Tạo tia sáng hàn điểm / Laser phát sáng khi robot làm việc
+    if (taskInfo.tool === 'weld' || taskInfo.tool === 'scanner') {
+      const sparkGeo = new THREE.SphereGeometry(0.08, 8, 8);
+      const sparkMat = new THREE.MeshBasicMaterial({ color: taskInfo.color });
+      const spark = new THREE.Mesh(sparkGeo, sparkMat);
+      spark.position.set(0, 0, 0);
+      spark.visible = false;
+      if (joints.nodeShoulder4) {
+        joints.nodeShoulder4.add(spark);
+        joints.sparkMesh = spark;
+      }
+    }
   } else {
+    // Fallback nếu chưa tải GLB
     const armMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.28, metalness: 0.2 });
     const lower = new THREE.Mesh(new RoundedBoxGeometry(0.38, 1.85, 0.38, 3, 0.08), armMat);
     lower.position.y = 0.9;
-    upperPivot.add(lower);
+    robotWrapper.add(lower);
   }
 
-  root.userData.joints = { turret, upperPivot, side, phase: Math.random() * Math.PI * 2 };
+  root.userData.joints = joints;
+  root.userData.robotWrapper = robotWrapper;
   return root;
 }
 

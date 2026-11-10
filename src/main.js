@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { preloadSimReadyModels } from './simreadyLoader.js';
+import { ModelInspectorModal } from './modelInspector.js';
 import {
   buildFactoryBuilding,
   buildPalletStack,
@@ -500,8 +501,30 @@ function updateSimulation(dt, elapsed) {
     const next = wps[(d.wpIndex + 1) % wps.length];
     fl.position.lerpVectors(curr, next, d.progress);
 
+    // Hướng mũi xe nâng đúng theo hướng vector di chuyển
     const dir = new THREE.Vector3().subVectors(next, curr).normalize();
-    fl.rotation.y = Math.atan2(-dir.z, dir.x);
+    if (dir.lengthSq() > 0.001) {
+      // Vì mũi càng xe nâng nằm ở trục +Z nên góc quay chuẩn là Math.atan2(dir.x, dir.z)
+      const targetAngle = Math.atan2(dir.x, dir.z);
+      // Xoay mượt mà theo góc cua
+      let diff = targetAngle - fl.rotation.y;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      fl.rotation.y += diff * Math.min(1, effDt * 6);
+    }
+
+    // Chuyển động động học càng nâng thủy lực (Hydraulic Lift) và vô lăng lái
+    const t = elapsed * 2.2 + (d.id === 'FL-01' ? 0 : 2);
+    const liftY = (Math.sin(t) * 0.5 + 0.5) * 0.55;
+    if (d.forkNode) {
+      d.forkNode.position.y = 0.0038 + liftY;
+    }
+    if (d.cargoNode) {
+      d.cargoNode.position.y = 0.42 + liftY;
+    }
+    if (d.rudderNode) {
+      d.rudderNode.rotation.y = Math.sin(t * 1.5) * 0.35;
+    }
   });
 
   // 2. Di chuyển các Xe Ô Tô trên dây chuyền bên trong nhà máy
@@ -519,12 +542,56 @@ function updateSimulation(dt, elapsed) {
     updateCarPositionOnLine(car);
   });
 
-  // 3. Cánh tay Robot lắp ráp chuyển động nhịp nhàng
+  // 3. Cánh tay Robot lắp ráp hoạt động theo quy trình công nghiệp thực tế
   assemblyRobots.forEach((bot) => {
     const j = bot.userData.joints;
-    const t = elapsed * 2.6 * state.simSpeed + j.phase;
-    j.turret.rotation.y = Math.sin(t) * 0.65;
-    j.upperPivot.rotation.x = Math.cos(t * 1.4) * 0.35 * j.side;
+    if (!j) return;
+
+    const t = elapsed * 2.2 * state.simSpeed + j.phase;
+    // Chu kỳ làm việc: [0..1] Tiếp cận -> [1..2] Thao tác hàn/lắp ráp linh kiện -> [2..3] Rút về vị trí chờ
+    const cycle = (t % (Math.PI * 2));
+    const isWorking = cycle > 1.2 && cycle < 4.2;
+
+    // Khớp xoay đế tròn (armBase) hướng về phía xe ô tô trên băng chuyền
+    if (j.nodeBase) {
+      const baseSwing = Math.sin(t * 0.8) * 0.45;
+      j.nodeBase.rotation.y = baseSwing;
+    }
+
+    // Khớp nâng thân đứng (armheight)
+    if (j.nodeHeight) {
+      j.nodeHeight.position.y = 0.585 + (Math.sin(t * 1.2) * 0.5 + 0.5) * 0.06;
+    }
+
+    // Khớp vai chính (armShoulder_01) vươn xuống thân xe
+    if (j.nodeShoulder1) {
+      j.nodeShoulder1.rotation.z = -0.65 + Math.sin(t * 1.4) * 0.28;
+    }
+
+    // Khớp khuỷu tay (armShoulder_02) uốn nhịp nhàng
+    if (j.nodeShoulder2) {
+      j.nodeShoulder2.rotation.z = 0.35 + Math.cos(t * 1.6) * 0.32;
+    }
+
+    // Khớp cổ tay (armShoulder_03) xoay góc định hướng
+    if (j.nodeShoulder3) {
+      j.nodeShoulder3.rotation.x = Math.sin(t * 2.5) * 0.55;
+    }
+
+    // Khớp đầu gắp/mũi hàn (armShoulder_04)
+    if (j.nodeShoulder4) {
+      j.nodeShoulder4.rotation.y = Math.cos(t * 2.0) * 0.45;
+    }
+
+    // Hiệu ứng tia lửa hàn / Quét Laser khi robot đang gia công xe
+    if (j.sparkMesh) {
+      const flash = isWorking && (Math.sin(t * 25) > 0.15);
+      j.sparkMesh.visible = flash;
+      if (flash) {
+        const s = 0.8 + Math.random() * 0.8;
+        j.sparkMesh.scale.set(s, s, s);
+      }
+    }
   });
 
   // 4. Xe tải chạy trên làn đường phía trước
@@ -689,10 +756,14 @@ function renderRightInspectorCard() {
   } else if (d.type === 'robot') {
     tagEl.textContent = `ROBOTICS • ${d.id}`;
     titleEl.textContent = d.name;
-    subEl.textContent = `Robot tự động${assetNote}`;
+    subEl.textContent = `Công đoạn: ${d.stationTask || 'Lắp Ráp Ô Tô'}`;
     badgeEl.textContent = 'Operational';
     badgeEl.className = 'status-badge green';
-    sumEl.textContent = `Đã hoàn thành ${d.cycles.toLocaleString()} chu kỳ lắp ráp`;
+    sumEl.textContent = `${d.stationTask || 'Gia công tự động'} • ${d.cycles.toLocaleString()} chu kỳ • SimReady: ${d.simreadyAsset}`;
+
+    document.getElementById('m1-label').textContent = 'Công đoạn trạm';
+    document.getElementById('m1-val').textContent = d.id;
+    document.getElementById('m1-max').textContent = 'Line 1';
   }
 }
 
@@ -944,6 +1015,8 @@ function setupUIEvents() {
 // ==========================================
 buildCampusGround();
 setupUIEvents();
+
+const modelInspector = new ModelInspectorModal();
 
 const navMetaEl = document.getElementById('nav-site-meta');
 preloadSimReadyModels((loaded, total) => {
