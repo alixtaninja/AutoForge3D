@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoTrack 3D — Quản Lý Nhà Máy Sản Xuất Xe Hơi (WareTrack Style)</title>
+  <meta name="description" content="Ứng dụng quản lý & mô phỏng nhà máy sản xuất xe hơi 3D theo phong cách game chiến thuật tươi sáng (WareTrack style)." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="./assets/index-3QYy-oKG.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-D7P8RqWK.css">
+</head>
+<body>
+  <!-- Khung cảnh 3D chính -->
+  <div id="canvas-container" aria-label="Khung nhìn 3D nhà máy sản xuất xe hơi"></div>
+
+  <!-- Nhãn ghim 3D (Pin Markers & Badges) -->
+  <div id="labels-container"></div>
+
+  <!-- Thanh điều hướng trên cùng (Top White Navbar giống WareTrack) -->
+  <header class="top-navbar">
+    <div class="nav-brand">
+      <div class="cube-logo">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <path d="M16 2L30 10V22L16 30L2 22V10L16 2Z" fill="#2563EB"/>
+          <path d="M16 2L30 10L16 18L2 10L16 2Z" fill="#60A5FA"/>
+          <path d="M16 18V30L30 22V10L16 18Z" fill="#1D4ED8"/>
+        </svg>
+      </div>
+      <span class="brand-title">AutoTrack</span>
+    </div>
+
+    <div class="nav-search">
+      <svg class="search-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="9" r="6"></circle>
+        <path d="M13.5 13.5L17 17"></path>
+      </svg>
+      <input id="search-input" type="text" placeholder="Tìm trạm lắp ráp, xe tải, xe nâng, lô xe xuất xưởng..." />
+      <kbd class="search-Shortcut">/</kbd>
+    </div>
+
+    <div class="nav-right">
+      <div class="site-selector" id="btn-site-selector" title="Chuyển góc nhìn tổng thể nhà máy">
+        <span class="site-badge">PLT-01</span>
+        <div class="site-info">
+          <span class="site-name">Riverside Auto Plant</span>
+          <span class="site-meta" id="nav-site-meta">84% công suất • 2/3 bến đang bốc hàng</span>
+        </div>
+        <span class="chevron">▾</span>
+      </div>
+
+      <button id="btn-cutaway" class="pill-toggle active" title="Bật/Tắt mái nhà máy để nhìn xuyên vào dây chuyền Robot bên trong">
+        🏠 Mở Mái Xưởng (X-Ray)
+      </button>
+
+      <button id="btn-model-inspector" class="pill-toggle" title="Kiểm tra phân tích cấu trúc 3D & Khớp động học mô hình SimReady">
+        🔬 Soi Mô Hình 3D
+      </button>
+
+      <div class="live-clock-pill">
+        <span class="live-dot"></span>
+        <span>Live</span>
+        <strong id="live-clock">09:40</strong>
+      </div>
+
+      <div class="speed-pills">
+        <button id="btn-pause" class="spd-btn" title="Tạm dừng / Tiếp tục">⏸</button>
+        <button class="spd-btn active" data-speed="1">1×</button>
+        <button class="spd-btn" data-speed="2">2×</button>
+        <button class="spd-btn" data-speed="4">4×</button>
+      </div>
+
+      <div class="user-profile">
+        <div class="avatar">AC</div>
+        <div class="user-text">
+          <span class="u-name">Alex Chen</span>
+          <span class="u-role">Giám Đốc Nhà Máy</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3 Thẻ KPI Nổi Góc Trái Trên (Floating KPI Cards) -->
+  <section class="floating-kpis">
+    <div class="kpi-card" id="kpi-card-stock">
+      <div class="kpi-icon blue-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.3L18.6 8 12 11.7 5.4 8 12 4.3zM5 9.8l6 3.3v6.6l-6-3.3V9.8zm8 9.9v-6.6l6-3.3v6.6l-6 3.3z"/>
+        </svg>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-title">Xe hoàn thiện & Linh kiện</span>
+        <div class="kpi-main">
+          <strong id="kpi-stock-val">1,412</strong>
+          <span class="kpi-trend up">↑ +18</span>
+        </div>
+        <span class="kpi-sub">lô kiện • PLT-01</span>
+      </div>
+    </div>
+
+    <div class="kpi-card" id="kpi-card-trucks">
+      <div class="kpi-icon indigo-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-title">Xe tải tại nhà máy</span>
+        <div class="kpi-main">
+          <strong id="kpi-trucks-val">3</strong>
+          <span class="kpi-trend up">↑ +1</span>
+        </div>
+        <span class="kpi-sub" id="kpi-trucks-sub">2 đang bốc hàng • 1 đang đến</span>
+      </div>
+    </div>
+
+    <div class="kpi-card" id="kpi-card-otd">
+      <div class="kpi-icon sky-bg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563EB">
+          <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+        </svg>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-title">Hiệu suất xuất xưởng (OEE)</span>
+        <div class="kpi-main">
+          <strong id="kpi-oee-val">96.8%</strong>
+          <span class="kpi-trend up">↑ +0.4%</span>
+        </div>
+        <span class="kpi-sub">30 ngày qua • PLT-01</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Thanh công cụ Camera Dọc (Vertical Camera Toolbar giống WareTrack) -->
+  <div class="cam-toolbar">
+    <button id="cam-zoom-in" class="tool-btn" title="Phóng to (+)">+</button>
+    <button id="cam-zoom-out" class="tool-btn" title="Thu nhỏ (−)">−</button>
+    <button id="cam-rotate-left" class="tool-btn" title="Xoay trái">↺</button>
+    <button id="cam-rotate-right" class="tool-btn" title="Xoay phải">↻</button>
+    <button id="cam-home" class="tool-btn" title="Góc nhìn chuẩn Isometric">⌂</button>
+    <button id="cam-interior" class="tool-btn" title="Cận cảnh dây chuyền Robot">🤖</button>
+  </div>
+
+  <!-- Bảng điều khiển bên phải (Depot / Plant Card giống hệt WareTrack) -->
+  <aside class="right-depot-card" id="right-card">
+    <div class="depot-header">
+      <div class="depot-icon-box">
+        <span class="depot-mini-building">🏭</span>
+      </div>
+      <div class="depot-title-group">
+        <span class="depot-tag" id="insp-tag">PLANT • PLT-01</span>
+        <h2 id="insp-title">Riverside Auto Plant</h2>
+        <span class="depot-address" id="insp-subtitle">1200Forge Parkway, Khu Công Nghiệp Cao</span>
+      </div>
+      <button id="btn-reset-selection" class="target-btn" title="Về tổng quan nhà máy">⊕</button>
+    </div>
+
+    <div class="depot-status-row">
+      <span class="status-badge green" id="insp-status-badge">Operational</span>
+      <span class="status-summary" id="insp-status-summary">2 xe tại bến • 6 xe trên chuyền • 2 xe nâng</span>
+    </div>
+
+    <!-- 4 Ô chỉ số tóm tắt -->
+    <div class="metric-boxes">
+      <div class="m-box">
+        <span class="m-label" id="m1-label">Sản lượng ca ngày</span>
+        <div class="m-val"><strong id="m1-val">148</strong> <span id="m1-max">/ 180 xe</span></div>
+        <div class="m-bar"><div id="m1-fill" class="m-fill blue" style="width: 82%"></div></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m2-label">Cửa xuất hàng (Bays)</span>
+        <div class="m-val"><strong id="m2-val">3</strong> <span id="m2-max">/ 3 hoạt động</span></div>
+        <div class="m-bar"><div id="m2-fill" class="m-fill green" style="width: 100%"></div></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m3-label">Đã xuất bến hôm nay</span>
+        <div class="m-val"><strong id="m3-val">24</strong> <span id="m3-max">chuyến xe tải</span></div>
+      </div>
+      <div class="m-box">
+        <span class="m-label" id="m4-label">Đang lắp trên chuyền</span>
+        <div class="m-val"><strong id="m4-val">6</strong> <span id="m4-max">ô tô điện</span></div>
+      </div>
+    </div>
+
+    <!-- Danh sách Linh kiện / Tồn kho (Inventory) -->
+    <div class="inventory-section">
+      <div class="sec-head">
+        <span>Tồn kho linh kiện & Phôi xe</span>
+        <span class="sec-unit">đơn vị</span>
+      </div>
+      <div class="inv-list" id="inventory-list">
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🔋</span>
+            <span class="inv-name">Cụm Pin Lithium 85kWh</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-1">1,906</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">⚙️</span>
+            <span class="inv-name">Động cơ điện Dual-Motor</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-2">412</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🛞</span>
+            <span class="inv-name">Bộ mâm lốp Sport 20"</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-3">212</strong>
+            <span class="stock-pill low-stock">Low Stock</span>
+          </div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-left">
+            <span class="inv-emoji">🖥️</span>
+            <span class="inv-name">Cảm biến LiDAR & Chip AI</span>
+          </div>
+          <div class="inv-right">
+            <strong id="inv-val-4">4,448</strong>
+            <span class="stock-pill in-stock">In Stock</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hoạt động Xe nâng & Robot -->
+    <div class="fleet-progress-section">
+      <div class="sec-head">
+        <span>Đội xe nâng & Robot lắp ráp</span>
+        <span class="sec-unit" id="fleet-working-txt">2/2 xe nâng • 8/8 robot</span>
+      </div>
+      <div class="fleet-bar-row">
+        <span class="fl-code">FL-01</span>
+        <span class="fl-desc" id="fl-status-desc">Đang cấp kiện Pin vào Chuyền & Bay 1</span>
+        <div class="fl-mini-track"><div class="fl-mini-fill" id="fl-mini-fill" style="width: 78%"></div></div>
+        <strong class="fl-pct" id="fl-pct">78%</strong>
+      </div>
+    </div>
+
+    <!-- Nút điều hành nhanh -->
+    <div class="depot-actions">
+      <button id="btn-spawn-car" class="action-btn primary">+ Đưa Xe Mới Vào Chuyền</button>
+      <button id="btn-dispatch-truck" class="action-btn secondary">🚛 Điều Xe Tải Xuất Bến</button>
+    </div>
+  </aside>
+
+  <!-- Thanh Tiến Trình Lô Hàng Góc Trái Dưới (Shipment / Production Tracking Stepper) -->
+  <section class="bottom-shipment-card">
+    <div class="ship-left">
+      <div class="ship-header">
+        <span class="ship-title-icon">🚗</span>
+        <strong id="track-header-title">Theo Dõi Lô Xe & Vận Chuyển</strong>
+        <span class="ship-sub-code" id="track-sub-code">TRK-2051 • AutoTrack Express</span>
+      </div>
+
+      <div class="stepper-wrap" id="stepper-wrap">
+        <div class="step-item done">
+          <div class="step-circle">✓</div>
+          <span class="step-name">Dập & Hàn Khung</span>
+          <span class="step-time">08:15</span>
+        </div>
+        <div class="step-line done"></div>
+        <div class="step-item done">
+          <div class="step-circle">✓</div>
+          <span class="step-name">Sơn & Lắp Động Cơ</span>
+          <span class="step-time">08:50</span>
+        </div>
+        <div class="step-line active"></div>
+        <div class="step-item active">
+          <div class="step-circle pulse">📦</div>
+          <span class="step-name" id="step-active-label">Đang Bốc Lên Xe 4/6</span>
+          <span class="step-time">ETA 09:53</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle">🚚</div>
+          <span class="step-name">Đang Vận Chuyển</span>
+          <span class="step-time">ETA 10:15</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle">🏁</div>
+          <span class="step-name">Giao Tới Showroom</span>
+          <span class="step-time">ETA 11:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ship-summary-box" id="ship-summary-box" title="Click để xem xe tải đang bốc hàng">
+      <div class="ship-truck-thumb">🚛</div>
+      <div class="ship-meta">
+        <strong id="ship-id">#SHP-78442</strong>
+        <span class="ship-dest" id="ship-dest">Tới: Showroom Trung Tâm</span>
+        <div class="ship-tags">
+          <span class="status-badge green" id="ship-badge">Loading</span>
+          <span class="ship-bay" id="ship-bay-info">PLT-01 • Bay 1 • còn 12 phút</span>
+        </div>
+      </div>
+      <span class="ship-arrow">›</span>
+    </div>
+  </section>
+
+  <!-- Bảng Tab Góc Phải Dưới (Docks / Forklifts / Assembly Line / Trucks) -->
+  <section class="bottom-tabs-card">
+    <div class="tabs-header">
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="docks">Docks <span id="tab-cnt-docks">3/3</span></button>
+        <button class="tab-btn" data-tab="cars">Chuyền Xe <span id="tab-cnt-cars">6</span></button>
+        <button class="tab-btn" data-tab="forklifts">Xe Nâng <span id="tab-cnt-fl">2/2</span></button>
+        <button class="tab-btn" data-tab="trucks">Xe Tải <span id="tab-cnt-trucks">3</span></button>
+      </div>
+      <span class="tabs-plant-label">Riverside Plant</span>
+    </div>
+
+    <div class="tabs-list" id="bottom-tabs-list">
+      <!-- Render động từ dữ liệu -->
+    </div>
+  </section>
+
+  <!-- Hộp Thoại Chẩn Đoán & Soi Cấu Trúc Khớp Mô Hình 3D (SimReady 3D Asset Diagnostic Inspector) -->
+  <div id="inspector-modal" class="inspector-modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">3D DIAGNOSTICS & VERIFICATION</span>
+          <h3>Kiểm Tra & Phân Tích Mô Hình 3D Chỉ Định</h3>
+          <p>Soi cấu trúc Node, Mesh, Khớp động học (Kinematic Joints), Tọa độ gốc Pivot và Hướng trục tiến lui</p>
+        </div>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-left-view">
+          <div class="modal-view-controls">
+            <select id="modal-model-select" class="model-select">
+              <option value="vehicle_forklift_orange_a01">Xe Nâng Hàng Cam (vehicle_forklift_orange_a01.glb)</option>
+              <option value="vehicle_forklift_blue_a01">Xe Nâng Hàng Xanh (vehicle_forklift_blue_a01.glb)</option>
+              <option value="robotic_system_arm_b01">Cánh Tay Robot Lắp Ráp (robotic_system_arm_b01.glb)</option>
+              <option value="robotic_system_a01">Robot Đa Trục 4 Tay (robotic_system_a01.glb)</option>
+              <option value="conveyor_belt_a05">Mô-đun Băng Chuyền (conveyor_belt_a05.glb)</option>
+              <option value="engineAssembly_electric_engine_a01">Cụm Động Cơ Điện EV (engineAssembly_electric_engine_a01.glb)</option>
+              <option value="bodyPart_hood_c01">Nắp Capo Ô Tô (bodyPart_hood_c01.glb)</option>
+              <option value="wheelAssembly_tire_c01">Cụm Bánh Lốp Xe (wheelAssembly_tire_c01.glb)</option>
+            </select>
+            <div class="modal-view-modes">
+              <button id="modal-btn-wireframe" class="view-btn">Lưới Wireframe</button>
+              <button id="modal-btn-axes" class="view-btn active">Trục Tọa Độ XYZ</button>
+              <button id="modal-btn-anim" class="view-btn active">Chạy Thử Động Học</button>
+            </div>
+          </div>
+          <div id="modal-canvas-container" class="modal-canvas-box"></div>
+          <div class="modal-view-hint">
+            <span>💡 <strong>Chuột trái:</strong> Xoay 360° • <strong>Chuột phải:</strong> Trượt • <strong>Lăn chuột:</strong> Phóng to/thu nhỏ</span>
+          </div>
+        </div>
+
+        <div class="modal-right-info">
+          <div class="info-card">
+            <h4>Thông Số Kích Thước Bounding Box</h4>
+            <div id="diag-dims" class="diag-meta-grid">
+              <!-- Render động -->
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Khớp Động Học (Kinematics & Joints)</h4>
+            <div id="diag-joints" class="diag-joints-list">
+              <!-- Render động -->
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Cây Phân Cấp Node Hierarchy (Scenegraph)</h4>
+            <div id="diag-tree" class="diag-tree-box">
+              <!-- Render động -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
