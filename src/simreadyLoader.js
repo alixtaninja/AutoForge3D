@@ -44,6 +44,7 @@ export const PRIORITY_TIER_1_ASSETS = [
   'vehicle_forklift_orange_a01',
   'vehicle_forklift_blue_a01',
   'robotic_system_arm_b01',
+  'robotic_system_arm_b01_optimized',
   'pallet_assembly_a02',
   'pallet_assembly_b01',
   'box_cardboard_a01',
@@ -76,8 +77,24 @@ export const SIMREADY_ASSETS = [
  * Dùng để khôi phục cấu trúc xương phân cấp bị làm phẳng khi xuất sang GLTF
  */
 const KINEMATIC_PARENT_MAP = {
-  // 1. Cánh tay Robot 6 trục (`robotic_system_arm_b01.glb`)
+  // 1. Cánh tay Robot 6 trục (`robotic_system_arm_b01.glb` & `robotic_system_arm_b01_optimized.glb`)
   robotic_system_arm_b01: [
+    { child: 'armheight_01_obj_00', parent: 'body_01_obj_00' },
+    { child: 'armBase_01_obj_00', parent: 'armheight_01_obj_00' },
+    { child: 'armShoulder_01_obj_00', parent: 'armBase_01_obj_00' },
+    { child: 'armShoulder_02_obj_00', parent: 'armShoulder_01_obj_00' },
+    { child: 'armShoulder_03_obj_00', parent: 'armShoulder_02_obj_00' },
+    { child: 'armShoulder_04_obj_00', parent: 'armShoulder_03_obj_00' },
+    { child: 'wheelBase_01_obj_00', parent: 'body_01_obj_00' },
+    { child: 'wheelBase_02_obj_00', parent: 'body_01_obj_00' },
+    { child: 'wheelBase_03_obj_00', parent: 'body_01_obj_00' },
+    { child: 'wheelBase_04_obj_00', parent: 'body_01_obj_00' },
+    { child: 'wheel_01_obj_00', parent: 'wheelBase_01_obj_00' },
+    { child: 'wheel_02_obj_00', parent: 'wheelBase_02_obj_00' },
+    { child: 'wheel_03_obj_00', parent: 'wheelBase_03_obj_00' },
+    { child: 'wheel_04_obj_00', parent: 'wheelBase_04_obj_00' }
+  ],
+  robotic_system_arm_b01_optimized: [
     { child: 'armheight_01_obj_00', parent: 'body_01_obj_00' },
     { child: 'armBase_01_obj_00', parent: 'armheight_01_obj_00' },
     { child: 'armShoulder_01_obj_00', parent: 'armBase_01_obj_00' },
@@ -228,7 +245,7 @@ function normalizeAndAuditTemplate(assetName, rootScene, loadTimeMs, byteLength)
   const isHeroCaster = heroShadowCasters.has(assetName);
 
   // Cắt tỉa vĩnh viễn 8 bánh xe lăn chìm dưới chân đế robot để Three.js không bao giờ phải duyệt qua (tiết kiệm 16 draw calls và 107k tris / con)
-  if (assetName === 'robotic_system_arm_b01') {
+  if (assetName === 'robotic_system_arm_b01' || assetName === 'robotic_system_arm_b01_optimized') {
     const wheelsToPrune = [];
     rootScene.traverse((child) => {
       if (child.name && (child.name.includes('wheel_') || child.name.includes('wheelBase_'))) {

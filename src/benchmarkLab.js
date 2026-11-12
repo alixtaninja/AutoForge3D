@@ -32,7 +32,7 @@ export class BenchmarkLabModal {
     this.autoRunLogEl = document.getElementById('bm-autorun-log');
 
     // State
-    this.currentAsset = 'robotic_system_arm_b01';
+    this.currentAsset = 'robotic_system_arm_b01_optimized';
     this.currentCount = 1;
     this.enableShadows = false;
     this.enableInstancing = true;
@@ -365,7 +365,7 @@ export class BenchmarkLabModal {
     }
 
     // Thu thập các khớp động học để phục vụ bài test animation
-    if (assetName === 'robotic_system_arm_b01') {
+    if (assetName === 'robotic_system_arm_b01' || assetName === 'robotic_system_arm_b01_optimized') {
       const joints = {};
       instance.traverse((child) => {
         if (child.name === 'armBase_01_obj_00') joints.base = child;
