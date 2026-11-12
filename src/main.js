@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { preloadSimReadyModels } from './simreadyLoader.js';
 import { ModelInspectorModal } from './modelInspector.js';
+import { BenchmarkLabModal } from './benchmarkLab.js';
 import {
   buildFactoryBuilding,
   buildPalletStack,
@@ -96,6 +97,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 container.appendChild(renderer.domElement);
@@ -1138,6 +1141,7 @@ renderRightInspectorCard();
 renderBottomTabs();
 
 const modelInspector = new ModelInspectorModal();
+const benchmarkLab = new BenchmarkLabModal();
 
 const navMetaEl = document.getElementById('nav-site-meta');
 preloadSimReadyModels((loaded, total, lastName) => {
@@ -1154,14 +1158,24 @@ preloadSimReadyModels((loaded, total, lastName) => {
 });
 
 const clock = new THREE.Clock();
+let shadowFrameTick = 0;
 
 function animate() {
   requestAnimationFrame(animate);
+
+  // Khi đang mở Benchmark Lab, tạm ngưng render nhà máy nền để tập trung 100% GPU/CPU cho bài test
+  if (benchmarkLab && benchmarkLab.isOpen) return;
 
   const dt = Math.min(clock.getDelta(), 0.1);
   const elapsed = clock.getElapsedTime();
 
   updateSimulation(dt, elapsed);
+
+  // Giảm tải GPU: Chỉ cập nhật Shadow Map mỗi 4 frames (15Hz shadow update thay vì 60Hz liên tục)
+  shadowFrameTick++;
+  if (shadowFrameTick % 4 === 0) {
+    renderer.shadowMap.needsUpdate = true;
+  }
 
   if (state.selectedObj && state.selectedObj.userData.type !== 'plant') {
     const wp = new THREE.Vector3();

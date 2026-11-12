@@ -57,6 +57,10 @@
         🔬 Soi Mô Hình 3D
       </button>
 
+      <button id="btn-benchmark-lab" class="pill-toggle" title="Phòng Thí Nghiệm & Đo Kiểm Hiệu Năng Benchmark 3D">
+        📊 Benchmark Lab
+      </button>
+
       <button id="btn-perf-toggle" class="pill-toggle active" title="Chuyển đổi giữa chế độ 60 FPS Turbo và Ultra CAD Detail">
         ⚡ 60 FPS Turbo
       </button>
@@ -388,6 +392,122 @@
             <div id="diag-tree" class="diag-tree-box">
               <!-- Render động -->
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hộp Thoại Phòng Thí Nghiệm & Benchmark Hiệu Năng 3D (Interactive Performance Benchmark Lab) -->
+  <div id="benchmark-modal" class="inspector-modal hidden">
+    <div class="modal-backdrop" id="benchmark-modal-backdrop"></div>
+    <div class="modal-dialog benchmark-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">3D BENCHMARK & PERFORMANCE LAB</span>
+          <h3>📊 Phòng Thí Nghiệm & Đo Kiểm Hiệu Năng 3D</h3>
+          <p>Cô lập từng mô hình (1x Robot, 1x Xe nâng, 1x Xe tải...), nhân bản stress-test (1x - 50x) và theo dõi trực tiếp FPS, Draw Calls, Rendered Triangles</p>
+        </div>
+        <button id="benchmark-modal-close" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-left-view">
+          <div class="modal-view-controls">
+            <select id="bm-asset-select" class="model-select">
+              <option value="robotic_system_arm_b01">🦾 Cánh Tay Robot SimReady (678k polys / arm)</option>
+              <option value="vehicle_forklift_orange_a01">🚜 Xe Nâng Điện Yale SimReady (330k polys)</option>
+              <option value="detailed_truck">🚛 Xe Tải Container Ngoại Thất (15k polys)</option>
+              <option value="sleek_car">🚗 Xe Ô Tô EV Trên Chuyền (Sleek Car Stage 3)</option>
+              <option value="pallet_assembly_a02">📦 Pallet Gỗ SimReady (103k polys)</option>
+              <option value="crate_blue_a01">🟦 Thùng Nhựa Xanh SimReady (60.7k polys)</option>
+              <option value="conveyor_belt_a05">🏭 Băng Chuyền SimReady (229k polys)</option>
+              <option value="rack_h3m_s02">🏢 Kệ Hàng Công Nghiệp (284k polys)</option>
+            </select>
+
+            <div class="bm-multiplier-pills">
+              <span class="bm-pill-label">Số Lượng:</span>
+              <button class="bm-count-btn active" data-count="1">1×</button>
+              <button class="bm-count-btn" data-count="5">5×</button>
+              <button class="bm-count-btn" data-count="10">10×</button>
+              <button class="bm-count-btn" data-count="25">25×</button>
+              <button class="bm-count-btn" data-count="50">50×</button>
+            </div>
+          </div>
+
+          <div id="benchmark-canvas-container" class="modal-canvas-box">
+            <!-- HUD nổi trên Canvas hiển thị nhanh FPS -->
+            <div class="bm-canvas-hud">
+              <div class="hud-fps-pill">
+                <span class="hud-dot"></span>
+                <strong id="bm-val-fps">60.0 FPS</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="bm-view-toolbar">
+            <div class="bm-toggles-row">
+              <button id="bm-toggle-shadows" class="view-btn">🌓 Bóng Đổ: TẮT</button>
+              <button id="bm-toggle-instancing" class="view-btn active">⚡ Shared Ref: BẬT</button>
+              <button id="bm-toggle-anim" class="view-btn active">🔄 Chuyển Động: BẬT</button>
+            </div>
+            <div class="bm-dpr-row">
+              <span class="bm-sub-label">Render Scale (DPR):</span>
+              <button class="bm-dpr-btn" data-dpr="0.75">0.75×</button>
+              <button class="bm-dpr-btn active" data-dpr="1.0">1.0×</button>
+              <button class="bm-dpr-btn" data-dpr="1.5">1.5×</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-right-info">
+          <!-- Card 1: Bảng Đo Tốc Độ Khung Hình -->
+          <div class="info-card">
+            <h4>Tốc Độ Khung Hình & Độ Trễ (Framerate & Frametime)</h4>
+            <div class="bm-fps-meter-box">
+              <div class="fps-progress-track">
+                <div id="bm-fps-bar" class="fps-progress-fill" style="width: 100%; background: #10b981;"></div>
+              </div>
+              <div class="fps-meta-row">
+                <span>Thời gian render (Frametime): <strong id="bm-val-frametime">16.6 ms</strong></span>
+                <span>Mục tiêu: <strong>60 FPS (16.6ms)</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Thống Kê WebGL Pipeline -->
+          <div class="info-card">
+            <h4>Thống Kê WebGL Pipeline (Three.js Renderer Stats)</h4>
+            <div class="diag-meta-grid">
+              <div class="diag-stat">
+                <span class="lbl">Draw Calls</span>
+                <span class="val" id="bm-val-drawcalls">0</span>
+              </div>
+              <div class="diag-stat">
+                <span class="lbl">Tam Giác (Tris)</span>
+                <span class="val" id="bm-val-triangles">0</span>
+              </div>
+              <div class="diag-stat">
+                <span class="lbl">Số Mesh</span>
+                <span class="val" id="bm-val-meshes">0</span>
+              </div>
+              <div class="diag-stat">
+                <span class="lbl">Geometries</span>
+                <span class="val" id="bm-val-geoms">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Thử Nghiệm Tự Động Stress Test -->
+          <div class="info-card">
+            <h4>Thử Nghiệm Stress Test Tự Động (Auto-Profiler)</h4>
+            <button id="bm-btn-autorun" class="btn-autorun">
+              🚀 Chạy Tự Động Đo Đa Tầng (1× → 50×)
+            </button>
+            <div id="bm-autorun-log" class="bm-autorun-log">
+              <div class="log-line">Nhấn nút bên trên để tự động chạy bài kiểm tra đa tầng và phân tích nút thắt cổ chai.</div>
+            </div>
+            <div id="bm-verdict-box" class="bm-verdict-wrap"></div>
           </div>
         </div>
       </div>
