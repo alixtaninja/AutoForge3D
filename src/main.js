@@ -1145,6 +1145,14 @@ renderBottomTabs();
 const modelInspector = new ModelInspectorModal();
 const benchmarkLab = new BenchmarkLabModal();
 
+document.getElementById('card-btn-inspector')?.addEventListener('click', () => {
+  modelInspector.show(modelInspector.currentModelKey);
+});
+
+document.getElementById('card-btn-benchmark')?.addEventListener('click', () => {
+  benchmarkLab.show();
+});
+
 const navMetaEl = document.getElementById('nav-site-meta');
 preloadSimReadyModels((loaded, total, lastName) => {
   if (navMetaEl) {

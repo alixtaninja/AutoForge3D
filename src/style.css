@@ -303,6 +303,50 @@ html, body {
   color: var(--blue-primary);
 }
 
+.pill-toggle.accent-pulse {
+  background: #ffffff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  font-weight: 800;
+}
+
+.pill-toggle.accent-pulse:hover {
+  background: #eff6ff;
+  border-color: var(--blue-primary);
+  transform: translateY(-1px);
+}
+
+.quick-tools-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.quick-tool-btn {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+
+.quick-tool-btn:hover {
+  background: #eff6ff;
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}
+
 .live-clock-pill {
   display: flex;
   align-items: center;
