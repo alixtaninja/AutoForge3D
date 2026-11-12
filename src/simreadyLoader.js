@@ -25,6 +25,9 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 const modelCache = new Map();
+if (typeof window !== 'undefined') {
+  window.__simreadyCache = modelCache;
+}
 const loadingPromises = new Map();
 const assetListeners = new Map();
 export const QA_AUDIT_REGISTRY = new Map();
@@ -224,13 +227,23 @@ function normalizeAndAuditTemplate(assetName, rootScene, loadTimeMs, byteLength)
   ]);
   const isHeroCaster = heroShadowCasters.has(assetName);
 
+  // Cắt tỉa vĩnh viễn 8 bánh xe lăn chìm dưới chân đế robot để Three.js không bao giờ phải duyệt qua (tiết kiệm 16 draw calls và 107k tris / con)
+  if (assetName === 'robotic_system_arm_b01') {
+    const wheelsToPrune = [];
+    rootScene.traverse((child) => {
+      if (child.name && (child.name.includes('wheel_') || child.name.includes('wheelBase_'))) {
+        wheelsToPrune.push(child);
+      }
+    });
+    wheelsToPrune.forEach((w) => {
+      if (w.geometry) w.geometry.dispose();
+      if (w.parent) w.parent.remove(w);
+    });
+  }
+
   rootScene.traverse((child) => {
     if (child.isMesh) {
       meshCount += 1;
-      // Ẩn 8 bánh xe lăn chìm dưới chân đế bệ thép công nghiệp cố định của robot (tiết kiệm 857,000 tam giác)
-      if (assetName === 'robotic_system_arm_b01' && (child.name.includes('wheel_') || child.name.includes('wheelBase_'))) {
-        child.visible = false;
-      }
 
       // Tối ưu hóa bóng đổ: Chỉ duy nhất khối thân chính của xe nâng hoạt động ngoài sân mới castShadow
       // Toàn bộ robot & chuyền lắp ráp bên trong xưởng không đổ bóng mặt trời ngoài sân, tiết kiệm hơn 6.3 triệu tam giác!

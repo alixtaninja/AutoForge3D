@@ -1001,6 +1001,7 @@ function setupUIEvents() {
           sunLight.shadow.map.dispose();
           sunLight.shadow.map = null;
         }
+        assemblyRobots.forEach(rob => rob.userData.setUltraMode?.(false));
       } else {
         btnPerf.textContent = '💎 Ultra CAD';
         btnPerf.classList.remove('active');
@@ -1011,6 +1012,7 @@ function setupUIEvents() {
           sunLight.shadow.map.dispose();
           sunLight.shadow.map = null;
         }
+        assemblyRobots.forEach(rob => rob.userData.setUltraMode?.(true));
       }
     });
   }

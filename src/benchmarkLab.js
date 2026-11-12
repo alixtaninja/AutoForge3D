@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { instantiateSimReady, onSimReadyAssetReady, QA_AUDIT_REGISTRY } from './simreadyLoader.js';
-import { buildDetailedTruck, buildForklift, buildSleekCar } from './factoryBuilder.js';
+import { buildDetailedTruck, buildForklift, buildSleekCar, buildOptimizedLODRobotArm } from './factoryBuilder.js';
 
 export class BenchmarkLabModal {
   constructor() {
@@ -334,6 +334,19 @@ export class BenchmarkLabModal {
         colorName: 'Apex Racing'
       });
       return car;
+    }
+
+    if (assetName === 'robotic_arm_lod') {
+      const lodArm = buildOptimizedLODRobotArm({ targetHeight: 2.35, rotationY: 0 });
+      const joints = {};
+      lodArm.traverse((child) => {
+        if (child.name === 'armBase_01_obj_00') joints.base = child;
+        if (child.name === 'armShoulder_01_obj_00') joints.shoulder = child;
+        if (child.name === 'armShoulder_02_obj_00') joints.elbow = child;
+        if (child.name === 'armShoulder_03_obj_00') joints.wrist = child;
+      });
+      this.animatedNodes.push({ type: 'arm', joints, seed: index * 0.4 });
+      return lodArm;
     }
 
     // Các mô hình NVIDIA SimReady GLB
