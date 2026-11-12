@@ -1,0 +1,155 @@
+[
+  {
+    "file": "vehicle_forklift_orange_a01.glb",
+    "desc": "Xe Nâng Yale Cam",
+    "beforeTris": 329976,
+    "afterTris": 183066,
+    "beforeSize": "2.43",
+    "afterSize": "5.04",
+    "reduction": "44.5%"
+  },
+  {
+    "file": "vehicle_forklift_blue_a01.glb",
+    "desc": "Xe Nâng Yale Xanh",
+    "beforeTris": 329976,
+    "afterTris": 183066,
+    "beforeSize": "2.43",
+    "afterSize": "5.04",
+    "reduction": "44.5%"
+  },
+  {
+    "file": "robotic_system_a01.glb",
+    "desc": "Robot Đa Trục 4 Tay",
+    "beforeTris": 592358,
+    "afterTris": 228706,
+    "beforeSize": "3.62",
+    "afterSize": "4.20",
+    "reduction": "61.4%"
+  },
+  {
+    "file": "engineAssembly_electric_engine_a01.glb",
+    "desc": "Động Cơ Điện EV",
+    "beforeTris": 544912,
+    "afterTris": 65584,
+    "beforeSize": "3.53",
+    "afterSize": "1.32",
+    "reduction": "88.0%"
+  },
+  {
+    "file": "conveyor_belt_a05.glb",
+    "desc": "Băng Chuyền SimReady",
+    "beforeTris": 228964,
+    "afterTris": 48232,
+    "beforeSize": "2.04",
+    "afterSize": "1.60",
+    "reduction": "78.9%"
+  },
+  {
+    "file": "rack_h3m_s02.glb",
+    "desc": "Kệ Hàng Công Nghiệp H3m",
+    "beforeTris": 284224,
+    "afterTris": 94132,
+    "beforeSize": "2.42",
+    "afterSize": "3.07",
+    "reduction": "66.9%"
+  },
+  {
+    "file": "palletJack_lowProfile_a01.glb",
+    "desc": "Xe Kéo Pallet Thấp",
+    "beforeTris": 180737,
+    "afterTris": 61261,
+    "beforeSize": "1.32",
+    "afterSize": "1.45",
+    "reduction": "66.1%"
+  },
+  {
+    "file": "wheelAssembly_tire_c01.glb",
+    "desc": "Cụm Bánh Lốp Xe EV",
+    "beforeTris": 227136,
+    "afterTris": 22712,
+    "beforeSize": "1.28",
+    "afterSize": "0.41",
+    "reduction": "90.0%"
+  },
+  {
+    "file": "bodyPart_hood_c01.glb",
+    "desc": "Nắp Capo EV",
+    "beforeTris": 304906,
+    "afterTris": 60500,
+    "beforeSize": "2.28",
+    "afterSize": "2.05",
+    "reduction": "80.2%"
+  },
+  {
+    "file": "bodyPart_bumper_front_d01.glb",
+    "desc": "Cản Trước EV",
+    "beforeTris": 229846,
+    "afterTris": 30817,
+    "beforeSize": "1.48",
+    "afterSize": "0.69",
+    "reduction": "86.6%"
+  },
+  {
+    "file": "bodyPart_door_front_b01.glb",
+    "desc": "Cánh Cửa Trước EV",
+    "beforeTris": 143768,
+    "afterTris": 14846,
+    "beforeSize": "0.99",
+    "afterSize": "0.37",
+    "reduction": "89.7%"
+  },
+  {
+    "file": "pallet_assembly_a02.glb",
+    "desc": "Cụm Pallet Gỗ A02",
+    "beforeTris": 103036,
+    "afterTris": 28921,
+    "beforeSize": "1.35",
+    "afterSize": "1.34",
+    "reduction": "71.9%"
+  },
+  {
+    "file": "pallet_assembly_b01.glb",
+    "desc": "Cụm Pallet Gỗ B01",
+    "beforeTris": 53034,
+    "afterTris": 15315,
+    "beforeSize": "1.07",
+    "afterSize": "1.03",
+    "reduction": "71.1%"
+  },
+  {
+    "file": "storage_tire_rack_c01.glb",
+    "desc": "Giá Để Lốp Xe",
+    "beforeTris": 83190,
+    "afterTris": 40160,
+    "beforeSize": "0.63",
+    "afterSize": "0.77",
+    "reduction": "51.7%"
+  },
+  {
+    "file": "barrier_gate_safetyDock_a02.glb",
+    "desc": "Rào Chắn An Toàn Cửa Xuất Hàng",
+    "beforeTris": 74600,
+    "afterTris": 41588,
+    "beforeSize": "0.48",
+    "afterSize": "0.81",
+    "reduction": "44.3%"
+  },
+  {
+    "file": "crate_blue_a01.glb",
+    "desc": "Thùng Nhựa Xanh",
+    "beforeTris": 60744,
+    "afterTris": 55104,
+    "beforeSize": "0.50",
+    "afterSize": "1.18",
+    "reduction": "9.3%"
+  },
+  {
+    "file": "drum_plastic_blue_a01.glb",
+    "desc": "Phuy Nhựa Xanh",
+    "beforeTris": 27858,
+    "afterTris": 14000,
+    "beforeSize": "0.22",
+    "afterSize": "0.30",
+    "reduction": "49.7%"
+  }
+]
