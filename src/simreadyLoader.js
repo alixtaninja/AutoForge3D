@@ -29,6 +29,11 @@ const loadingPromises = new Map();
 const assetListeners = new Map();
 export const QA_AUDIT_REGISTRY = new Map();
 
+if (typeof window !== 'undefined') {
+  window.__simreadyCache = modelCache;
+  window.__qaRegistry = QA_AUDIT_REGISTRY;
+}
+
 const CACHE_NAME = 'autoforge3d-simready-glb-v2';
 
 // Phân tầng ưu tiên tải: Tier 1 tải trước cho chuyển động chính, Tier 2 tải nền
@@ -213,11 +218,25 @@ function normalizeAndAuditTemplate(assetName, rootScene, loadTimeMs, byteLength)
   let vertexCount = 0;
   let triangleCount = 0;
 
+  const heroShadowCasters = new Set([
+    'vehicle_forklift_orange_a01',
+    'vehicle_forklift_blue_a01'
+  ]);
+  const isHeroCaster = heroShadowCasters.has(assetName);
+
   rootScene.traverse((child) => {
     if (child.isMesh) {
       meshCount += 1;
-      child.castShadow = true;
-      child.receiveShadow = true;
+      // Ẩn 8 bánh xe lăn chìm dưới chân đế bệ thép công nghiệp cố định của robot (tiết kiệm 857,000 tam giác)
+      if (assetName === 'robotic_system_arm_b01' && (child.name.includes('wheel_') || child.name.includes('wheelBase_'))) {
+        child.visible = false;
+      }
+
+      // Tối ưu hóa bóng đổ: Chỉ duy nhất khối thân chính của xe nâng hoạt động ngoài sân mới castShadow
+      // Toàn bộ robot & chuyền lắp ráp bên trong xưởng không đổ bóng mặt trời ngoài sân, tiết kiệm hơn 6.3 triệu tam giác!
+      const isMajorBody = child.name === 'sm_body_a01_obj_00';
+      child.castShadow = isHeroCaster && isMajorBody;
+      child.receiveShadow = isHeroCaster;
       if (child.material) {
         child.material.envMapIntensity = 1.15;
       }

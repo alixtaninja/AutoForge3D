@@ -93,12 +93,14 @@ camera.position.set(-28, 30, 44);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 container.appendChild(renderer.domElement);
+window.__threeRenderer = renderer;
+window.__threeScene = scene;
 
 // Tạo môi trường phản xạ ánh sáng tự nhiên (IBL) giúp kim loại và sơn xe tươi sáng
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -122,16 +124,17 @@ scene.add(hemiLight);
 const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.85);
 sunLight.position.set(-32, 48, 38);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.width = 2048;
-sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.mapSize.width = 1024;
+sunLight.shadow.mapSize.height = 1024;
 sunLight.shadow.camera.near = 5;
 sunLight.shadow.camera.far = 140;
-const d = 52;
+const d = 48;
 sunLight.shadow.camera.left = -d;
 sunLight.shadow.camera.right = d;
 sunLight.shadow.camera.top = d;
 sunLight.shadow.camera.bottom = -d;
-sunLight.shadow.bias = -0.0004;
+sunLight.shadow.bias = -0.0003;
+sunLight.shadow.normalBias = 0.02;
 scene.add(sunLight);
 
 // ==========================================
@@ -978,6 +981,36 @@ function setupUIEvents() {
       flyCameraTo(new THREE.Vector3(0, 1.5, -4.5), new THREE.Vector3(-12, 22, 18));
     }
   });
+
+  // Chuyển chế độ 60 FPS Turbo / Ultra CAD
+  const btnPerf = document.getElementById('btn-perf-toggle');
+  let isTurbo = true;
+  if (btnPerf) {
+    btnPerf.addEventListener('click', () => {
+      isTurbo = !isTurbo;
+      if (isTurbo) {
+        btnPerf.textContent = '⚡ 60 FPS Turbo';
+        btnPerf.classList.add('active');
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+        sunLight.shadow.mapSize.width = 512;
+        sunLight.shadow.mapSize.height = 512;
+        if (sunLight.shadow.map) {
+          sunLight.shadow.map.dispose();
+          sunLight.shadow.map = null;
+        }
+      } else {
+        btnPerf.textContent = '💎 Ultra CAD';
+        btnPerf.classList.remove('active');
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        if (sunLight.shadow.map) {
+          sunLight.shadow.map.dispose();
+          sunLight.shadow.map = null;
+        }
+      }
+    });
+  }
 
   // Tốc độ mô phỏng
   document.getElementById('btn-pause').addEventListener('click', (e) => {

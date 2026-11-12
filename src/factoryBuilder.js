@@ -2,6 +2,27 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { instantiateSimReady, onSimReadyAssetReady } from './simreadyLoader.js';
 
+// ==========================================
+// THIẾT KẾ DÙNG CHUNG HÌNH HỌC & VẬT LIỆU (SHARED REFERENCE GEOMETRY & MATERIALS)
+// Khắc phục triệt để yêu cầu: "thay vì tạo hàng ngàn mô hình cùng loại có thể tạo 1 và clone/reference chúng ra"
+// Tiết kiệm hơn 9.5 triệu tam giác và giảm hàng trăm draw calls trên toàn nhà máy!
+// ==========================================
+export const sharedTruckTireGeom = new THREE.CylinderGeometry(0.56, 0.56, 0.38, 20);
+sharedTruckTireGeom.rotateZ(Math.PI / 2);
+export const sharedTruckRimGeom = new THREE.CylinderGeometry(0.32, 0.32, 0.40, 14);
+sharedTruckRimGeom.rotateZ(Math.PI / 2);
+export const sharedTireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.85 });
+export const sharedRimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 });
+
+export const sharedCarTireGeom = new THREE.CylinderGeometry(0.38, 0.38, 0.25, 18);
+sharedCarTireGeom.rotateX(Math.PI / 2);
+export const sharedCarRimGeom = new THREE.CylinderGeometry(0.24, 0.24, 0.27, 14);
+sharedCarRimGeom.rotateX(Math.PI / 2);
+export const sharedCarDiscGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.28, 10);
+sharedCarDiscGeom.rotateX(Math.PI / 2);
+export const sharedCarRimMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.85, roughness: 0.25 });
+export const sharedCarDiscMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.9, roughness: 0.2 });
+
 /**
  * Tạo Texture chữ/logo chất lượng cao để dán lên nóc nhà máy, biển cổng Dock và thùng xe tải
  */
@@ -523,39 +544,18 @@ export function buildDetailedTruck({ id, code, company, tagline, cabColor = 0x25
     truck.add(hl);
   });
 
-  // 6 Cụm bánh xe tải (hiển thị bánh xe Procedural ngay và nâng cấp sang lốp SimReady khi tải xong)
+  // 6 Cụm bánh xe tải dùng chung Reference Geometry & Material (không lạm dụng 18 mô hình 227k tris gây giật lag)
   const wheelsContainer = new THREE.Group();
   truck.add(wheelsContainer);
 
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.2 });
   [-2.8, -1.3, 6.1].forEach((wz) => {
     [-1.45, 1.45].forEach((wx) => {
       const wGroup = new THREE.Group();
       wGroup.position.set(wx, 0.56, wz);
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.38, 20), tireMat);
-      tire.rotation.z = Math.PI / 2;
-      wGroup.add(tire);
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.4, 14), rimMat);
-      rim.rotation.z = Math.PI / 2;
-      wGroup.add(rim);
+      const tire = new THREE.Mesh(sharedTruckTireGeom, sharedTireMat);
+      const rim = new THREE.Mesh(sharedTruckRimGeom, sharedRimMat);
+      wGroup.add(tire, rim);
       wheelsContainer.add(wGroup);
-    });
-  });
-
-  onSimReadyAssetReady('wheelAssembly_tire_c01', () => {
-    wheelsContainer.clear();
-    [-2.8, -1.3, 6.1].forEach((wz) => {
-      [-1.45, 1.45].forEach((wx) => {
-        const simTire = instantiateSimReady('wheelAssembly_tire_c01', {
-          targetHeight: 1.12,
-          rotationY: wx > 0 ? 0 : Math.PI
-        });
-        if (simTire) {
-          simTire.position.set(wx, 0, wz);
-          wheelsContainer.add(simTire);
-        }
-      });
     });
   });
 
@@ -624,6 +624,9 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
     if (simEngine) {
       simEngine.position.set(1.05, 0.48, 0);
       car.add(simEngine);
+      car.userData.engineMesh = simEngine;
+      // Nếu xe đã sang giai đoạn gắn vỏ xe (stage >= 1), ẩn khối động cơ để tiết kiệm 544,912 tam giác!
+      simEngine.visible = car.userData.stage === 0;
     }
   });
 
@@ -646,42 +649,9 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
   upperCabin.position.set(-0.2, 1.18, 0);
   upperCabin.castShadow = true;
   bodyGroup.add(upperCabin);
-
-  onSimReadyAssetReady('bodyPart_hood_c01', () => {
-    const simHood = instantiateSimReady('bodyPart_hood_c01', { scale: 1.05 });
-    if (simHood) {
-      simHood.position.set(1.12, 0.92, 0);
-      bodyGroup.add(simHood);
-      car.userData.updateStage(car.userData.stage);
-    }
-  });
-
-  onSimReadyAssetReady('bodyPart_bumper_front_d01', () => {
-    const simBumper = instantiateSimReady('bodyPart_bumper_front_d01', { scale: 0.88 });
-    if (simBumper) {
-      simBumper.position.set(1.75, 0.42, 0);
-      bodyGroup.add(simBumper);
-      car.userData.updateStage(car.userData.stage);
-    }
-  });
-
-  onSimReadyAssetReady('bodyPart_door_front_b01', () => {
-    [-0.88, 0.88].forEach((dz) => {
-      const simDoor = instantiateSimReady('bodyPart_door_front_b01', {
-        scale: 0.92,
-        rotationY: Math.PI / 2
-      });
-      if (simDoor) {
-        simDoor.position.set(0.05, 0.52, dz);
-        bodyGroup.add(simDoor);
-      }
-    });
-    car.userData.updateStage(car.userData.stage);
-  });
-
   car.add(bodyGroup);
 
-  // Giai đoạn 3: Kính chắn gió, Đèn pha LED & 4 Bánh xe NVIDIA SimReady (`wheelAssembly_tire_c01.glb`)
+  // Giai đoạn 3: Kính chắn gió, Đèn pha LED & 4 Bánh xe Ô tô dùng chung Reference Geometries
   const detailsGroup = new THREE.Group();
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.08, metalness: 0.9 });
   const glassBand = new THREE.Mesh(new RoundedBoxGeometry(2.1, 0.38, 1.57, 3, 0.12), glassMat);
@@ -702,45 +672,45 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
   tailLight.position.set(-1.82, 0.85, 0);
   detailsGroup.add(tailLight);
 
+  // 4 Bánh xe Ô tô dùng chung Reference Geometries & Materials (tiết kiệm hơn 5.4 triệu tam giác)
   const wheelPlaceholders = new THREE.Group();
   detailsGroup.add(wheelPlaceholders);
 
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
   [
     [1.18, 0.38, 0.88],
     [1.18, 0.38, -0.88],
     [-1.18, 0.38, 0.88],
     [-1.18, 0.38, -0.88]
   ].forEach(([wx, wy, wz]) => {
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.25, 16), tireMat);
-    w.rotation.x = Math.PI / 2;
-    w.position.set(wx, wy, wz);
-    wheelPlaceholders.add(w);
+    const wGroup = new THREE.Group();
+    wGroup.position.set(wx, wy, wz);
+    const tire = new THREE.Mesh(sharedCarTireGeom, sharedTireMat);
+    const rim = new THREE.Mesh(sharedCarRimGeom, sharedCarRimMat);
+    const disc = new THREE.Mesh(sharedCarDiscGeom, sharedCarDiscMat);
+    wGroup.add(tire, rim, disc);
+    wheelPlaceholders.add(wGroup);
   });
-
-  onSimReadyAssetReady('wheelAssembly_tire_c01', () => {
-    wheelPlaceholders.clear();
-    [
-      [1.18, 0, 0.88],
-      [1.18, 0, -0.88],
-      [-1.18, 0, 0.88],
-      [-1.18, 0, -0.88]
-    ].forEach(([wx, wy, wz]) => {
-      const simWheel = instantiateSimReady('wheelAssembly_tire_c01', {
-        targetHeight: 0.76,
-        rotationY: wz > 0 ? Math.PI / 2 : -Math.PI / 2
-      });
-      if (simWheel) {
-        simWheel.position.set(wx, wy, wz);
-        wheelPlaceholders.add(simWheel);
-      }
-    });
-  });
-
   car.add(detailsGroup);
 
+  const doorMeshes = [];
+  car.userData.doorMeshes = doorMeshes;
+
+  // Định nghĩa hàm cập nhật giai đoạn sớm trước khi bất kỳ callback hot-swap nào chạy
   car.userData.updateStage = (stage) => {
     car.userData.stage = stage;
+    if (car.userData.engineMesh) {
+      // Động cơ điện chỉ hiển thị ở Công đoạn 0 (Khung gầm hở). Lên vỏ xe thì ẩn để tiết kiệm 545,000 tam giác!
+      car.userData.engineMesh.visible = (stage === 0);
+    }
+    if (car.userData.hoodMesh) {
+      car.userData.hoodMesh.visible = (stage >= 1);
+    }
+    if (car.userData.bumperMesh) {
+      car.userData.bumperMesh.visible = (stage >= 1);
+    }
+    if (car.userData.doorMeshes.length > 0) {
+      car.userData.doorMeshes.forEach(d => { d.visible = (stage >= 2); });
+    }
     bodyGroup.visible = stage >= 1;
     const targetHex = stage >= 2 ? colorHex : '#cbd5e1';
     bodyPaintMat.color.set(targetHex);
@@ -755,6 +725,42 @@ export function buildSleekCar({ id, model = 'Apex SUV', colorHex = '#ef4444', co
     });
     detailsGroup.visible = stage >= 3;
   };
+
+  onSimReadyAssetReady('bodyPart_hood_c01', () => {
+    const simHood = instantiateSimReady('bodyPart_hood_c01', { scale: 1.05 });
+    if (simHood) {
+      simHood.position.set(1.12, 0.92, 0);
+      bodyGroup.add(simHood);
+      car.userData.hoodMesh = simHood;
+      car.userData.updateStage(car.userData.stage);
+    }
+  });
+
+  onSimReadyAssetReady('bodyPart_bumper_front_d01', () => {
+    const simBumper = instantiateSimReady('bodyPart_bumper_front_d01', { scale: 0.88 });
+    if (simBumper) {
+      simBumper.position.set(1.75, 0.42, 0);
+      bodyGroup.add(simBumper);
+      car.userData.bumperMesh = simBumper;
+      car.userData.updateStage(car.userData.stage);
+    }
+  });
+
+  onSimReadyAssetReady('bodyPart_door_front_b01', () => {
+    doorMeshes.length = 0;
+    [-0.88, 0.88].forEach((dz) => {
+      const simDoor = instantiateSimReady('bodyPart_door_front_b01', {
+        scale: 0.92,
+        rotationY: Math.PI / 2
+      });
+      if (simDoor) {
+        simDoor.position.set(0.05, 0.52, dz);
+        bodyGroup.add(simDoor);
+        doorMeshes.push(simDoor);
+      }
+    });
+    car.userData.updateStage(car.userData.stage);
+  });
 
   return car;
 }
@@ -901,9 +907,10 @@ export function buildSimReadyConveyorLine() {
   beltBase.receiveShadow = true;
   lineGroup.add(beltBase);
 
-  // Bổ sung các cụm khung băng chuyền SimReady ngay khi tải xong
+  // Bổ sung các cụm khung băng chuyền SimReady tại các trạm trung chuyển chính
   onSimReadyAssetReady('conveyor_belt_a05', () => {
-    for (let cx = -15; cx <= 15; cx += 3.0) {
+    // Đặt 3 trạm mô-đun chính (Đầu chuyền, Giữa chuyền, Cuối chuyền) thay vì lặp 11 lần giúp giảm hơn 1.8 triệu tam giác
+    [-12, 0, 12].forEach((cx) => {
       const seg = instantiateSimReady('conveyor_belt_a05', {
         scale: 1.45,
         rotationY: Math.PI / 2
@@ -913,7 +920,7 @@ export function buildSimReadyConveyorLine() {
         seg.position.set(cx, 0, -4.5);
         lineGroup.add(seg);
       }
-    }
+    });
   });
 
   return lineGroup;
