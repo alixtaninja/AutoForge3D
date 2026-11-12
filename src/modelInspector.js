@@ -34,7 +34,21 @@ export const SIMREADY_METADATA = {
     ]
   },
   robotic_system_arm_b01: {
-    title: 'Cánh Tay Robot Lắp Ráp 6 Trục (KUKA SimReady)',
+    title: 'Cánh Tay Robot Lắp Ráp 6 Trục (KUKA SimReady CAD Gốc 678k)',
+    forwardAxis: '+X (Đầu thao tác vươn dọc trục +X hướng vào dây chuyền)',
+    rigSummary: 'Chuỗi 6 bậc tự do liên hoàn (0.00m khe hở): body_01 → armheight_01 → armBase_01 → armShoulder_01 → 02 → 03 → 04',
+    stateMachine: '4 Pha công nghiệp: APPROACH (Hạ vai vươn tới xe) → WELD_SWEEP (Quét mối hàn + Tia lửa) → RETRACT (Rút tay) → STANDBY',
+    joints: [
+      { name: 'Khớp Nâng Thân Đứng (armheight_01_obj_00)', type: 'Prismatic (Độ cao trụ)', range: '0m - 0.20m', axis: 'Y (Con của body_01)' },
+      { name: 'Khớp Trụ Xoay Tròn (armBase_01_obj_00)', type: 'Revolute (Quét ngang Yaw)', range: '-180° đến +180°', axis: 'Y (Con của armheight_01)' },
+      { name: 'Khớp Vai Chính (armShoulder_01_obj_00)', type: 'Revolute (Gập cánh tay trên)', range: '-90° đến 0°', axis: 'Z (Con của armBase_01)' },
+      { name: 'Khớp Khuỷu Tay (armShoulder_02_obj_00)', type: 'Revolute (Uốn cẳng tay)', range: '-90° đến +45°', axis: 'Z (Con của armShoulder_01)' },
+      { name: 'Khớp Cổ Tay Xoay (armShoulder_03_obj_00)', type: 'Revolute (Xoay cổ tay)', range: '-90° đến +90°', axis: 'X (Con của armShoulder_02)' },
+      { name: 'Đầu Hàn / Kẹp (armShoulder_04_obj_00)', type: 'Revolute (Định hướng mũi hàn)', range: '-90° đến +90°', axis: 'Y (Con của armShoulder_03)' }
+    ]
+  },
+  robotic_system_arm_b01_45k: {
+    title: 'Cánh Tay Robot SimReady CAD Siêu Tối Ưu (57k polys - Giữ 100% CAD Gốc)',
     forwardAxis: '+X (Đầu thao tác vươn dọc trục +X hướng vào dây chuyền)',
     rigSummary: 'Chuỗi 6 bậc tự do liên hoàn (0.00m khe hở): body_01 → armheight_01 → armBase_01 → armShoulder_01 → 02 → 03 → 04',
     stateMachine: '4 Pha công nghiệp: APPROACH (Hạ vai vươn tới xe) → WELD_SWEEP (Quét mối hàn + Tia lửa) → RETRACT (Rút tay) → STANDBY',
@@ -126,6 +140,9 @@ export class ModelInspectorModal {
 
     this.initThree();
     this.initEvents();
+    if (typeof window !== 'undefined') {
+      window.__modelInspectorInstance = this;
+    }
   }
 
   initThree() {
@@ -140,7 +157,7 @@ export class ModelInspectorModal {
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     this.camera.position.set(2.8, 2.5, 3.8);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;

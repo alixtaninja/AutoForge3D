@@ -959,9 +959,9 @@ export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
 
   bindRobotJoints(lodRobot);
 
-  // Hot-Swap sang mô hình NVIDIA SimReady CAD nguyên bản đã tối ưu hóa (104k tam giác, giữ nguyên 100% chi tiết CAD gốc & 12 vật liệu PBR)
-  onSimReadyAssetReady('robotic_system_arm_b01_optimized', () => {
-    const simRobot = instantiateSimReady('robotic_system_arm_b01_optimized', { targetHeight: 2.35, rotationY: rotY });
+  // Hot-Swap sang mô hình NVIDIA SimReady CAD nguyên bản đã tối ưu hóa (57k tam giác, giảm 92.7% polycount, giữ nguyên 100% chi tiết CAD gốc & 12 vật liệu PBR)
+  onSimReadyAssetReady('robotic_system_arm_b01_45k', () => {
+    const simRobot = instantiateSimReady('robotic_system_arm_b01_45k', { targetHeight: 2.35, rotationY: rotY });
     if (simRobot) {
       while (robotWrapper.children.length > 0) robotWrapper.remove(robotWrapper.children[0]);
       robotWrapper.add(simRobot);
@@ -969,10 +969,10 @@ export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
     }
   });
 
-  // Hàm chuyển đổi giữa chế độ 60 FPS Turbo (CAD Tinh Gọn 104k) và Ultra CAD (785k)
+  // Hàm chuyển đổi giữa các chế độ: CAD Siêu Tối Ưu (57k), CAD Tinh Gọn (104k), và Ultra CAD (785k)
   root.userData.setUltraMode = (enableUltra) => {
     while (robotWrapper.children.length > 0) robotWrapper.remove(robotWrapper.children[0]);
-    const chosenKey = enableUltra ? 'robotic_system_arm_b01' : 'robotic_system_arm_b01_optimized';
+    const chosenKey = enableUltra ? 'robotic_system_arm_b01' : 'robotic_system_arm_b01_45k';
     const simRobot = instantiateSimReady(chosenKey, { targetHeight: 2.35, rotationY: rotY });
     if (simRobot) {
       robotWrapper.add(simRobot);
