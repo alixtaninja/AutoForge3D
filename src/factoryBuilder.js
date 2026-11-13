@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { instantiateSimReady, onSimReadyAssetReady } from './simreadyLoader.js';
+import { buildForkliftTwin, buildConveyorTwin, buildRackTwin } from './threejsTwins.js';
 
 // ==========================================
 // THIẾT KẾ DÙNG CHUNG HÌNH HỌC & VẬT LIỆU (SHARED REFERENCE GEOMETRY & MATERIALS)
@@ -407,48 +408,43 @@ export function buildForklift({ id, name, taskDesc, waypoints }) {
     wheels: []
   };
 
-  // Fallback hiển thị tức thì (0ms)
-  const fallbackGroup = new THREE.Group();
-  const yellowMat = new THREE.MeshStandardMaterial({ color: id === 'FL-01' ? 0xf97316 : 0x2563eb, roughness: 0.35 });
-  const fbBody = new THREE.Mesh(new RoundedBoxGeometry(0.95, 1.1, 1.65, 3, 0.15), yellowMat);
-  fbBody.position.set(0, 0.6, 0);
-  fallbackGroup.add(fbBody);
-  forklift.add(fallbackGroup);
-
-  // Hot-Swap sang mô hình NVIDIA SimReady ngay khi tải xong
-  onSimReadyAssetReady(assetKey, () => {
-    const simForklift = instantiateSimReady(assetKey, {
-      targetHeight: 2.25,
-      rotationY: 0 // Giữ nguyên trục gốc +Z chuẩn của NVIDIA SimReady
-    });
-    if (!simForklift) return;
-
-    forklift.remove(fallbackGroup);
-    forklift.add(simForklift);
-
-    const wheels = [];
-    simForklift.traverse((child) => {
-      if (child.name === 'sm_fork_a01_obj_00') {
-        forklift.userData.forkNode = child;
-      } else if (child.name === 'sm_ruddebase_a01_obj_00') {
-        forklift.userData.rudderBaseNode = child;
-      } else if (child.name.startsWith('sm_wheel') && child.name.endsWith('_obj_00')) {
-        wheels.push(child);
-      }
-    });
-    forklift.userData.wheels = wheels;
-
-    // Đặt kiện hàng gắn trực tiếp vào bên trong node Càng Nâng (`sm_fork_a01_obj_00`) để đi lên/xuống liền khối 100%
-    onSimReadyAssetReady('box_cardboard_a01', () => {
-      const carriedCargo = instantiateSimReady('box_cardboard_a01', { scale: 0.95 });
-      if (carriedCargo && forklift.userData.forkNode) {
-        // Trong không gian cục bộ của sm_fork_a01_obj_00: mặt càng nằm tại y ≈ 0.16, mũi càng vươn tới z ≈ 0.72
-        carriedCargo.position.set(0, 0.17, 0.68);
-        forklift.userData.forkNode.add(carriedCargo);
-        forklift.userData.cargoNode = carriedCargo;
-      }
-    });
+  // Sử dụng trực tiếp Xe Nâng Three.js Twin (3.5k tris, 0ms load, giữ nguyên trục +Z & khớp động học)
+  const twinForklift = buildForkliftTwin({
+    color: id === 'FL-01' ? 'orange' : 'blue',
+    targetHeight: 2.25
   });
+  forklift.add(twinForklift);
+
+  const wheels = [];
+  twinForklift.traverse((child) => {
+    if (child.name === 'sm_fork_a01_obj_00') {
+      forklift.userData.forkNode = child;
+    } else if (child.name === 'sm_ruddebase_a01_obj_00') {
+      forklift.userData.rudderBaseNode = child;
+    } else if (child.name.startsWith('sm_wheel') && child.name.endsWith('_obj_00')) {
+      wheels.push(child);
+    }
+  });
+  forklift.userData.wheels = wheels;
+
+  // Kiện hàng Three.js gắn trực tiếp vào càng nâng (sm_fork_a01_obj_00)
+  if (forklift.userData.forkNode) {
+    const cargoGroup = new THREE.Group();
+    const palletBase = new THREE.Mesh(
+      new THREE.BoxGeometry(0.68, 0.08, 0.68),
+      new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.8 })
+    );
+    palletBase.position.y = 0.04;
+    const cardboardBox = new THREE.Mesh(
+      new RoundedBoxGeometry(0.60, 0.48, 0.60, 2, 0.02),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.72 })
+    );
+    cardboardBox.position.y = 0.32;
+    cargoGroup.add(palletBase, cardboardBox);
+    cargoGroup.position.set(0, 0.04, 0.46);
+    forklift.userData.forkNode.add(cargoGroup);
+    forklift.userData.cargoNode = cargoGroup;
+  }
 
   return forklift;
 }
@@ -1035,25 +1031,15 @@ export function buildAssemblyRobot({ id, name, x, z, side = 1 }) {
 
   bindRobotJoints(lodRobot);
 
-  // Hot-Swap sang mô hình NVIDIA SimReady CAD nguyên bản đã tối ưu hóa (57k tam giác, giảm 92.7% polycount, giữ nguyên 100% chi tiết CAD gốc & 12 vật liệu PBR)
-  onSimReadyAssetReady('robotic_system_arm_b01_45k', () => {
-    const simRobot = instantiateSimReady('robotic_system_arm_b01_45k', { targetHeight: 2.35, rotationY: rotY });
-    if (simRobot) {
-      while (robotWrapper.children.length > 0) robotWrapper.remove(robotWrapper.children[0]);
-      robotWrapper.add(simRobot);
-      bindRobotJoints(simRobot);
-    }
-  });
-
-  // Hàm chuyển đổi giữa các chế độ: CAD Siêu Tối Ưu (57k), CAD Tinh Gọn (104k), và Ultra CAD (785k)
+  // Tạm thời sử dụng 100% mô hình Three.js Twin (4.6k polys, 0 KB tải mạng).
+  // (Tính năng tự nạp SimReady GLB khi zoom cận cảnh được ghi nhận trong docs/ROADMAP_FUTURE_FEATURES.md)
   root.userData.setUltraMode = (enableUltra) => {
     while (robotWrapper.children.length > 0) robotWrapper.remove(robotWrapper.children[0]);
-    const chosenKey = enableUltra ? 'robotic_system_arm_b01' : 'robotic_system_arm_b01_45k';
-    const simRobot = instantiateSimReady(chosenKey, { targetHeight: 2.35, rotationY: rotY });
-    if (simRobot) {
-      robotWrapper.add(simRobot);
-      bindRobotJoints(simRobot);
-    }
+    const nextRobot = enableUltra
+      ? (instantiateSimReady('robotic_system_arm_b01_45k', { targetHeight: 2.35, rotationY: rotY }) || buildOptimizedLODRobotArm({ targetHeight: 2.35, rotationY: rotY }))
+      : buildOptimizedLODRobotArm({ targetHeight: 2.35, rotationY: rotY });
+    robotWrapper.add(nextRobot);
+    bindRobotJoints(nextRobot);
   };
 
   root.userData.robotWrapper = robotWrapper;
@@ -1075,20 +1061,12 @@ export function buildSimReadyConveyorLine() {
   beltBase.receiveShadow = true;
   lineGroup.add(beltBase);
 
-  // Bổ sung các cụm khung băng chuyền SimReady tại các trạm trung chuyển chính
-  onSimReadyAssetReady('conveyor_belt_a05', () => {
-    // Đặt 3 trạm mô-đun chính (Đầu chuyền, Giữa chuyền, Cuối chuyền) thay vì lặp 11 lần giúp giảm hơn 1.8 triệu tam giác
-    [-12, 0, 12].forEach((cx) => {
-      const seg = instantiateSimReady('conveyor_belt_a05', {
-        scale: 1.45,
-        rotationY: Math.PI / 2
-      });
-      if (seg) {
-        seg.scale.y = 0.22;
-        seg.position.set(cx, 0, -4.5);
-        lineGroup.add(seg);
-      }
-    });
+  // Đặt 3 trạm mô-đun Băng Chuyền Three.js Twin (1.8k tris/trạm) hiển thị tức thì 0ms
+  [-12, 0, 12].forEach((cx) => {
+    const seg = buildConveyorTwin({ targetLength: 3.4 });
+    seg.scale.y = 0.28;
+    seg.position.set(cx, 0, -4.5);
+    lineGroup.add(seg);
   });
 
   return lineGroup;
@@ -1139,23 +1117,18 @@ export function buildExteriorStorageRack(x, z, id) {
     pallets: '24 Kiện Phụ Tùng & Lốp'
   };
 
-  onSimReadyAssetReady('rack_h3m_s02', () => {
-    [-2.2, 2.2].forEach((rx) => {
-      const simRack = instantiateSimReady('rack_h3m_s02', { scale: 1.5 });
-      if (simRack) {
-        simRack.position.set(rx, 0, 0);
-        rack.add(simRack);
-      }
+  [-2.2, 2.2].forEach((rx) => {
+    const twinRack = buildRackTwin({ targetHeight: 4.2 });
+    twinRack.position.set(rx, 0, 0);
+    rack.add(twinRack);
 
-      onSimReadyAssetReady('pallet_assembly_a02', () => {
-        [0.05, 2.05].forEach((ry, levelIdx) => {
-          const p = instantiateSimReady(levelIdx === 0 ? 'pallet_assembly_a02' : 'pallet_assembly_b01', { scale: 1.25 });
-          if (p) {
-            p.position.set(rx, ry, 0);
-            rack.add(p);
-          }
-        });
-      });
+    [0.38, 2.05].forEach((ry) => {
+      const palletBox = new THREE.Mesh(
+        new RoundedBoxGeometry(1.1, 0.72, 0.9, 2, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.75 })
+      );
+      palletBox.position.set(rx, ry + 0.36, 0);
+      rack.add(palletBox);
     });
   });
 

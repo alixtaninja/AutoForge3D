@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { preloadSimReadyModels } from './simreadyLoader.js';
 import { ModelInspectorModal } from './modelInspector.js';
 import { BenchmarkLabModal } from './benchmarkLab.js';
 import {
@@ -1154,18 +1153,9 @@ document.getElementById('card-btn-benchmark')?.addEventListener('click', () => {
 });
 
 const navMetaEl = document.getElementById('nav-site-meta');
-preloadSimReadyModels((loaded, total, lastName) => {
-  if (navMetaEl) {
-    navMetaEl.textContent = `Streaming SimReady GLB (${loaded}/${total}): ${lastName} • QA Verified`;
-  }
-}).then(() => {
-  if (navMetaEl) {
-    navMetaEl.textContent = '20/20 NVIDIA SimReady GLB • QA Audit: PASS • Cache Ready';
-  }
-  if (!modelInspector.modalEl.classList.contains('hidden')) {
-    modelInspector.loadModel(modelInspector.currentModelKey);
-  }
-});
+if (navMetaEl) {
+  navMetaEl.textContent = '100% Three.js Twin Mode • 60 FPS Turbo • 0 MB GLB Stream';
+}
 
 const clock = new THREE.Clock();
 let shadowFrameTick = 0;
