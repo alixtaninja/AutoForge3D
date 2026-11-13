@@ -6,9 +6,9 @@
   "allowed_files": [
     "src/gigafactory/assets/heavyMachineryTwins.js"
   ],
-  "status": "TODO",
-  "branch": null,
+  "status": "IN_REVIEW",
+  "branch": "task/TASK-006",
   "pr_url": null,
   "merged_commit": null,
-  "updated_at": "2026-11-13T06:45:05.006Z"
+  "updated_at": "2026-11-13T06:57:30.000Z"
 }
