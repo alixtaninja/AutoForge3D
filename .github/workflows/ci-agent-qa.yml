@@ -1,0 +1,40 @@
+name: Agent Task QA & Build Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/ev-gigafactory-city-builder
+  push:
+    branches:
+      - feat/ev-gigafactory-city-builder
+
+jobs:
+  verify-build-and-contracts:
+    name: "🛡️ Gate 1-2: Build & Integrity Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Core Riverside Demo Files Intact
+        run: |
+          test -f src/factoryBuilder.js
+          test -f src/threejsTwins.js
+          test -f src/modelInspector.js
+          test -f src/benchmarkLab.js
+          test -f AGENTS.md
+          test -f docs/ev-gigafactory-blueprint/MULTI_AGENT_DISPATCH_BOARD.md
+          test -f docs/ev-gigafactory-blueprint/ATOMIC_TASK_SPECIFICATIONS.md
+
+      - name: Run Production Vite Build
+        run: npm run build
