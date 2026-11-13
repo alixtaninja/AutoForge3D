@@ -6,9 +6,9 @@
   "allowed_files": [
     "src/gigafactory/assets/heavyMachineryTwins.js"
   ],
-  "status": "IN_REVIEW",
+  "status": "MERGED",
   "branch": "task/TASK-006",
-  "pr_url": null,
-  "merged_commit": null,
-  "updated_at": "2026-11-13T06:57:30.000Z"
+  "pr_url": "https://github.com/alixtaninja/AutoForge3D/pull/3",
+  "merged_commit": "42ae5c3",
+  "updated_at": "2026-11-13T06:59:10.000Z"
 }
