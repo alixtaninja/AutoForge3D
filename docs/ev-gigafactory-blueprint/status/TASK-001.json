@@ -7,9 +7,9 @@
     "src/gigafactory/config/masterSpecLoader.js",
     "src/gigafactory/config/constructionStagesSpec.js"
   ],
-  "status": "IN_REVIEW",
+  "status": "MERGED",
   "branch": "task/TASK-001",
-  "pr_url": null,
-  "merged_commit": null,
-  "updated_at": "2026-11-13T06:56:30.000Z"
+  "pr_url": "https://github.com/alixtaninja/AutoForge3D/pull/1",
+  "merged_commit": "0232db3",
+  "updated_at": "2026-11-13T06:58:00.000Z"
 }
