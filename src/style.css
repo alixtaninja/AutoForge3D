@@ -1700,4 +1700,36 @@ html, body {
   margin: 0;
 }
 
+/* ==========================================
+   EV GIGAFACTORY 350HA MODE SWITCHER & OVERLAYS
+========================================== */
+.pill-toggle.mode-switch-btn {
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+  border-color: #3b82f6;
+  color: #f8fafc;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+  font-weight: 800;
+  white-space: nowrap;
+}
 
+.pill-toggle.mode-switch-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.pill-toggle.mode-switch-btn.active {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: #34d399;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+body.gigafactory-mode .floating-kpis,
+body.gigafactory-mode .right-depot-card,
+body.gigafactory-mode .bottom-shipment-card,
+body.gigafactory-mode .bottom-tabs-card,
+body.gigafactory-mode .cam-toolbar,
+body.gigafactory-mode #labels-container,
+body.gigafactory-mode .speed-pills {
+  display: none !important;
+}

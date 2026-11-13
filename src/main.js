@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { ModelInspectorModal } from './modelInspector.js';
 import { BenchmarkLabModal } from './benchmarkLab.js';
+import { GigafactorySceneController } from './gigafactory/gigafactorySceneController.js';
 import {
   buildFactoryBuilding,
   buildPalletStack,
@@ -72,6 +73,7 @@ const state = {
   simSpeed: 1,
   paused: false,
   roofCutaway: false, // Bắt đầu hiển thị mái xanh đặc trưng như ảnh WareTrack, người dùng có thể bấm nút hoặc zoom gần để mở mái
+  isGigafactoryMode: false,
   activeBottomTab: 'docks',
   selectedObj: null,
   nextCarSeq: 107
@@ -142,6 +144,16 @@ scene.add(sunLight);
 // ==========================================
 // 4. DỰNG KHUÔN VIÊN NHÀ MÁY, ĐƯỜNG NỘI BỘ, XE TẢI, XE NÂNG & DÂY CHUYỀN
 // ==========================================
+const campusGroup = new THREE.Group();
+campusGroup.name = 'RiversideCampusGroup';
+scene.add(campusGroup);
+
+const gigafactoryController = new GigafactorySceneController({
+  scene,
+  camera,
+  controls
+});
+
 const selectableObjects = [];
 const pinMarkers = [];
 const trucksList = [];
@@ -158,7 +170,7 @@ function buildCampusGround() {
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
-  scene.add(ground);
+  campusGroup.add(ground);
 
   // Sân bê tông khu vực nhà máy & bãi bốc dỡ (Yard Apron)
   const yardApron = new THREE.Mesh(
@@ -168,7 +180,7 @@ function buildCampusGround() {
   yardApron.rotation.x = -Math.PI / 2;
   yardApron.position.set(0, 0.01, 2);
   yardApron.receiveShadow = true;
-  scene.add(yardApron);
+  campusGroup.add(yardApron);
 
   // Sàn dây chuyền bên trong nhà máy
   const interiorFloor = new THREE.Mesh(
@@ -178,7 +190,7 @@ function buildCampusGround() {
   interiorFloor.rotation.x = -Math.PI / 2;
   interiorFloor.position.set(0, 0.02, -4);
   interiorFloor.receiveShadow = true;
-  scene.add(interiorFloor);
+  campusGroup.add(interiorFloor);
 
   // Đường xe tải chạy phía trước (Main Logistics Roadway)
   const roadMat = new THREE.MeshStandardMaterial({ color: 0xdbe3ec, roughness: 0.75 });
@@ -186,7 +198,7 @@ function buildCampusGround() {
   mainRoad.rotation.x = -Math.PI / 2;
   mainRoad.position.set(0, 0.02, 23);
   mainRoad.receiveShadow = true;
-  scene.add(mainRoad);
+  campusGroup.add(mainRoad);
 
   // Vạch kẻ đường đứt nét màu trắng
   const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -194,13 +206,13 @@ function buildCampusGround() {
     const dash = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.22), dashMat);
     dash.rotation.x = -Math.PI / 2;
     dash.position.set(rx, 0.03, 23);
-    scene.add(dash);
+    campusGroup.add(dash);
   }
 }
 
 function buildInteriorAssemblyLine() {
   // Hệ thống băng chuyền lắp ráp ô tô sử dụng mô hình NVIDIA SimReady (`conveyor_belt_a05.glb`)
-  scene.add(buildSimReadyConveyorLine());
+  campusGroup.add(buildSimReadyConveyorLine());
 
   // Viền xanh dương dọc băng chuyền
   [-1.45, 1.45].forEach((oz) => {
@@ -209,7 +221,7 @@ function buildInteriorAssemblyLine() {
       new THREE.MeshBasicMaterial({ color: 0x2563eb })
     );
     rail.position.set(0, 0.3, -4.5 + oz);
-    scene.add(rail);
+    campusGroup.add(rail);
   });
 
   // 8 Cánh tay Robot lắp ráp hai bên dây chuyền
@@ -229,7 +241,7 @@ function buildInteriorAssemblyLine() {
       z: -1.8,
       side: -1
     });
-    scene.add(botNorth, botSouth);
+    campusGroup.add(botNorth, botSouth);
     assemblyRobots.push(botNorth, botSouth);
     selectableObjects.push(botNorth, botSouth);
   });
@@ -245,7 +257,7 @@ function buildInteriorAssemblyLine() {
     });
     car.userData.progress = i * 16.5 + 5;
     updateCarPositionOnLine(car);
-    scene.add(car);
+    campusGroup.add(car);
     assemblyCars.push(car);
     selectableObjects.push(car);
   }
@@ -271,13 +283,13 @@ function buildExteriorYardObjects() {
     id: 'PLT-01',
     name: 'Riverside Auto Plant'
   };
-  scene.add(factoryBuilding);
+  campusGroup.add(factoryBuilding);
   selectableObjects.push(factoryBuilding);
 
   // 2. Container MAERA LINE màu xanh ngọc bên trái sân
   const maeraContainer = buildShippingContainer(-24.5, 10.5);
   maeraContainer.rotation.y = Math.PI / 2;
-  scene.add(maeraContainer);
+  campusGroup.add(maeraContainer);
   selectableObjects.push(maeraContainer);
 
   // 3. Các kiện Pallet thùng Carton ở từng cửa Bay D1, D2, D3 và sân bãi + Ghim Pin xanh giống hệt WareTrack
@@ -305,7 +317,7 @@ function buildExteriorYardObjects() {
       id: pc.id,
       name: pc.name
     });
-    scene.add(p);
+    campusGroup.add(p);
     selectableObjects.push(p);
     if (pc.pin) {
       createPinMarker(p, '', 'teardrop', new THREE.Vector3(0, 2.3, 0));
@@ -314,7 +326,7 @@ function buildExteriorYardObjects() {
 
   // 4. Kệ kho cao tầng phía Đông Bắc giống hệt ảnh WareTrack
   const rack1 = buildExteriorStorageRack(18.5, -15.5, 'RACK-E1');
-  scene.add(rack1);
+  campusGroup.add(rack1);
   selectableObjects.push(rack1);
 
   // 5. Hai chiếc Xe Nâng (Forklifts) chạy trên hành lang an toàn, không đâm xuyên Pallet hay Xe Tải
@@ -348,7 +360,7 @@ function buildExteriorYardObjects() {
   fl2.userData.opState = 'TRANSIT_LOADED';
   fl2.userData.liftHeight = 0.22;
 
-  scene.add(fl1, fl2);
+  campusGroup.add(fl1, fl2);
   forkliftsList.push(fl1, fl2);
   selectableObjects.push(fl1, fl2);
   createPinMarker(fl1, 'FL-01', 'pill', new THREE.Vector3(0, 2.9, 0));
@@ -371,7 +383,7 @@ function buildExteriorYardObjects() {
   truck1.rotation.y = -Math.PI / 2;
   truck1.userData.baseX = -7.5;
   truck1.userData.motionState = 'PARKED';
-  scene.add(truck1);
+  campusGroup.add(truck1);
   trucksList.push(truck1);
   selectableObjects.push(truck1);
   createPinMarker(truck1, 'TRK-2051 • AutoTrack', 'pill', new THREE.Vector3(0, 4.4, 0));
@@ -391,7 +403,7 @@ function buildExteriorYardObjects() {
   truck2.position.set(8.5, 0, 22.8);
   truck2.rotation.y = -Math.PI / 2;
   truck2.userData.motionState = 'CRUISING';
-  scene.add(truck2);
+  campusGroup.add(truck2);
   trucksList.push(truck2);
   selectableObjects.push(truck2);
   createPinMarker(truck2, 'TRK-2287 • Bluepeak', 'pill', new THREE.Vector3(0, 4.4, 0));
@@ -411,12 +423,12 @@ function buildExteriorYardObjects() {
   truck3.position.set(22.5, 0, 22.8);
   truck3.rotation.y = -Math.PI / 2;
   truck3.userData.motionState = 'CRUISING';
-  scene.add(truck3);
+  campusGroup.add(truck3);
   trucksList.push(truck3);
   selectableObjects.push(truck3);
 
   // 7. Các thiết bị nhà xưởng phụ trợ NVIDIA SimReady (Pallet Jack, Rào chắn an toàn Dock, Thùng phuy công nghiệp)
-  scene.add(buildSimReadyFactoryProps());
+  campusGroup.add(buildSimReadyFactoryProps());
 
   // 8. Cây xanh Stylised tròn trịa xung quanh khuôn viên
   const treeCoords = [
@@ -429,7 +441,7 @@ function buildExteriorYardObjects() {
     [-36, -6, 0.9]
   ];
   treeCoords.forEach(([tx, tz, sc]) => {
-    scene.add(buildStylizedTree(tx, tz, sc));
+    campusGroup.add(buildStylizedTree(tx, tz, sc));
   });
 }
 
@@ -714,7 +726,7 @@ const selectionRing = new THREE.Mesh(
 selectionRing.rotation.x = -Math.PI / 2;
 selectionRing.position.y = 0.06;
 selectionRing.visible = false;
-scene.add(selectionRing);
+campusGroup.add(selectionRing);
 
 renderer.domElement.addEventListener('pointerdown', (e) => {
   downPos = { x: e.clientX, y: e.clientY };
@@ -728,6 +740,12 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(pointer, camera);
+
+  if (state.isGigafactoryMode) {
+    gigafactoryController.handlePointerClick(raycaster);
+    return;
+  }
+
   const hits = raycaster.intersectObjects(selectableObjects, true);
 
   if (hits.length > 0) {
@@ -774,6 +792,7 @@ function setRoofCutaway(open) {
   if (factoryBuilding?.userData?.roofGroup) {
     factoryBuilding.userData.roofGroup.visible = !open;
   }
+  gigafactoryController.setCutaway(open);
   const btn = document.getElementById('btn-cutaway');
   btn.classList.toggle('active', open);
   btn.textContent = open ? '🏠 Đóng Mái Xưởng' : '🏠 Mở Mái Xưởng (X-Ray)';
@@ -976,10 +995,33 @@ function renderBottomTabs() {
 // 8. SỰ KIỆN NÚT BẤM GIAO DIỆN & TÌM KIẾM
 // ==========================================
 function setupUIEvents() {
+  // Chuyển đổi chế độ: Riverside Demo <-> EV Gigafactory 350Ha City-Builder
+  const btnModeGigafactory = document.getElementById('btn-mode-gigafactory');
+  if (btnModeGigafactory) {
+    btnModeGigafactory.addEventListener('click', () => {
+      state.isGigafactoryMode = !state.isGigafactoryMode;
+      document.body.classList.toggle('gigafactory-mode', state.isGigafactoryMode);
+      btnModeGigafactory.classList.toggle('active', state.isGigafactoryMode);
+
+      if (state.isGigafactoryMode) {
+        btnModeGigafactory.textContent = '🏭 Riverside Demo';
+        campusGroup.visible = false;
+        camGoalTarget = null;
+        camGoalPos = null;
+        gigafactoryController.activate();
+        gigafactoryController.setCutaway(state.roofCutaway);
+      } else {
+        btnModeGigafactory.textContent = '🌆 Siêu Tổ Hợp 350Ha';
+        gigafactoryController.deactivate();
+        campusGroup.visible = true;
+      }
+    });
+  }
+
   // Bật/tắt mở mái nhà xưởng (Cutaway X-Ray)
   document.getElementById('btn-cutaway').addEventListener('click', () => {
     setRoofCutaway(!state.roofCutaway);
-    if (state.roofCutaway) {
+    if (!state.isGigafactoryMode && state.roofCutaway) {
       flyCameraTo(new THREE.Vector3(0, 1.5, -4.5), new THREE.Vector3(-12, 22, 18));
     }
   });
@@ -1169,7 +1211,11 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const elapsed = clock.getElapsedTime();
 
-  updateSimulation(dt, elapsed);
+  if (state.isGigafactoryMode) {
+    gigafactoryController.update(dt, elapsed);
+  } else {
+    updateSimulation(dt, elapsed);
+  }
 
   // Giảm tải GPU: Chỉ cập nhật Shadow Map mỗi 4 frames (15Hz shadow update thay vì 60Hz liên tục)
   shadowFrameTick++;
@@ -1177,7 +1223,7 @@ function animate() {
     renderer.shadowMap.needsUpdate = true;
   }
 
-  if (state.selectedObj && state.selectedObj.userData.type !== 'plant') {
+  if (!state.isGigafactoryMode && state.selectedObj && state.selectedObj.userData.type !== 'plant') {
     const wp = new THREE.Vector3();
     state.selectedObj.getWorldPosition(wp);
     selectionRing.position.set(wp.x, 0.06, wp.z);
@@ -1187,7 +1233,7 @@ function animate() {
     selectionRing.visible = false;
   }
 
-  if (camGoalTarget) {
+  if (!state.isGigafactoryMode && camGoalTarget) {
     controls.target.lerp(camGoalTarget, 0.08);
     if (camGoalPos) {
       camera.position.lerp(camGoalPos, 0.06);
@@ -1200,7 +1246,9 @@ function animate() {
 
   controls.update();
   renderer.render(scene, camera);
-  updatePinMarkers();
+  if (!state.isGigafactoryMode) {
+    updatePinMarkers();
+  }
 }
 
 animate();
