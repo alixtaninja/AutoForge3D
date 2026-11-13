@@ -9,9 +9,9 @@
     "src/gigafactory/core/streamDirector.js",
     "src/gigafactory/core/gigafactoryUI.js"
   ],
-  "status": "IN_REVIEW",
+  "status": "MERGED",
   "branch": "task/TASK-014",
-  "pr_url": null,
-  "merged_commit": null,
-  "updated_at": "2026-11-13T07:07:00.000Z"
+  "pr_url": "https://github.com/alixtaninja/AutoForge3D/pull/13",
+  "merged_commit": "06fadfca064783098c803258674d96ee1ad91d9a",
+  "updated_at": "2026-11-13T07:10:40.000Z"
 }
