@@ -1,0 +1,17 @@
+{
+  "id": "TASK-016",
+  "title": "Kiểm Thử Tự Động Visual QA (Puppeteer Screenshots) & Báo Cáo Nghiệm Thu 60 FPS",
+  "wave": 6,
+  "dependencies": [
+    "TASK-015"
+  ],
+  "allowed_files": [
+    "src/gigafactory/qa/visualAuditRunner.cjs",
+    "docs/ev-gigafactory-blueprint/QA_VISUAL_AUDIT_REPORT.md"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.007Z"
+}

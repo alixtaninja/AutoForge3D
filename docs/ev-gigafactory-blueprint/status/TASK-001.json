@@ -1,0 +1,15 @@
+{
+  "id": "TASK-001",
+  "title": "Bộ Nạp Dữ Liệu Quy Hoạch & Hệ Quy Chiếu Tọa Độ (Smart Scenic Scale)",
+  "wave": 1,
+  "dependencies": [],
+  "allowed_files": [
+    "src/gigafactory/config/masterSpecLoader.js",
+    "src/gigafactory/config/constructionStagesSpec.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.002Z"
+}

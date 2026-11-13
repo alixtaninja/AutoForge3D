@@ -1,0 +1,17 @@
+{
+  "id": "TASK-005",
+  "title": "Đèn Đường LED, Đèn Tín Hiệu 3 Màu, Biển Chỉ Đường & Cây Xanh (InstancedMesh)",
+  "wave": 3,
+  "dependencies": [
+    "TASK-001",
+    "TASK-004"
+  ],
+  "allowed_files": [
+    "src/gigafactory/infra/trafficPropsBuilder.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

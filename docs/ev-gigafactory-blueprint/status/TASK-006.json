@@ -1,0 +1,14 @@
+{
+  "id": "TASK-006",
+  "title": "Chế Tạo 6 Three.js Twin Máy Công Trình (Cẩu Tháp, Cẩu Xích, Xe Lu, Máy Xúc, Xe Ủi, Xe Bồn)",
+  "wave": 1,
+  "dependencies": [],
+  "allowed_files": [
+    "src/gigafactory/assets/heavyMachineryTwins.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

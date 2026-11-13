@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "vite --port 5173 --host",
     "build": "vite build",
-    "preview": "vite preview --port 5173 --host"
+    "preview": "vite preview --port 5173 --host",
+    "coord:status": "node scripts/agent-coord.cjs status",
+    "coord:claim": "node scripts/agent-coord.cjs claim",
+    "coord:submit": "node scripts/agent-coord.cjs submit",
+    "coord:merge": "node scripts/agent-coord.cjs merge"
   },
   "dependencies": {
     "three": "^0.170.0"

@@ -1,0 +1,17 @@
+{
+  "id": "TASK-014",
+  "title": "Đạo Diễn Camera Livestream YouTube & Thanh Điều Khiển EPC HUD",
+  "wave": 3,
+  "dependencies": [
+    "TASK-002"
+  ],
+  "allowed_files": [
+    "src/gigafactory/core/streamDirector.js",
+    "src/gigafactory/core/gigafactoryUI.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.007Z"
+}

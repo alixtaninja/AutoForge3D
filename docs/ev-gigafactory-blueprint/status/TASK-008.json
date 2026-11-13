@@ -1,0 +1,19 @@
+{
+  "id": "TASK-008",
+  "title": "Hồ Sơ Kiến Trúc Thực Tế & Engine Render 5 Giai Đoạn Thi Công (Stage 0..4)",
+  "wave": 2,
+  "dependencies": [
+    "TASK-001",
+    "TASK-006",
+    "TASK-007"
+  ],
+  "allowed_files": [
+    "docs/ev-gigafactory-blueprint/Architectural_Visual_Reference.md",
+    "src/gigafactory/builders/stageRenderer.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

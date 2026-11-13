@@ -1,0 +1,17 @@
+{
+  "id": "TASK-009",
+  "title": "Thi Công Trục Xương Sống F01–F05 (Nhà Chữ E) & 5 Cầu Skybridge SB-01..05",
+  "wave": 3,
+  "dependencies": [
+    "TASK-008"
+  ],
+  "allowed_files": [
+    "src/gigafactory/builders/spineFactoriesBuilder.js",
+    "src/gigafactory/builders/skybridgesBuilder.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "TASK-003",
+  "title": "Địa Hình 350 Ha, Hồ Điều Hòa & Phân Lô 24 Khu Đất Cắm Mốc",
+  "wave": 2,
+  "dependencies": [
+    "TASK-001"
+  ],
+  "allowed_files": [
+    "src/gigafactory/infra/terrainAndEarthwork.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.005Z"
+}

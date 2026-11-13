@@ -1,0 +1,16 @@
+{
+  "id": "TASK-004",
+  "title": "Mạng Lưới Đường Đại Lộ 6 Làn, Ngã Tư, Vạch Kẻ & Cổng Logistics",
+  "wave": 2,
+  "dependencies": [
+    "TASK-001"
+  ],
+  "allowed_files": [
+    "src/gigafactory/infra/roadNetworkBuilder.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

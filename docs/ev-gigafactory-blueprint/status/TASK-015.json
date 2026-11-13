@@ -1,0 +1,33 @@
+{
+  "id": "TASK-015",
+  "title": "Tích Hợp Chuyển Đổi Chế Độ Xem (\"Riverside\" ↔ \"Gigafactory 350Ha\") & Soi Mô Hình 3D",
+  "wave": 5,
+  "dependencies": [
+    "TASK-001",
+    "TASK-002",
+    "TASK-003",
+    "TASK-004",
+    "TASK-005",
+    "TASK-006",
+    "TASK-007",
+    "TASK-008",
+    "TASK-009",
+    "TASK-010",
+    "TASK-011",
+    "TASK-012",
+    "TASK-013",
+    "TASK-014"
+  ],
+  "allowed_files": [
+    "src/gigafactory/gigafactorySceneController.js",
+    "src/main.js",
+    "src/modelInspector.js",
+    "index.html",
+    "src/style.css"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.007Z"
+}

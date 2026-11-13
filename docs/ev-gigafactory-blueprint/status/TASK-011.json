@@ -1,0 +1,16 @@
+{
+  "id": "TASK-011",
+  "title": "Thi Công Cụm Nam: Kho AS/RS WH01, 5 Phụ Trợ F08, Tháp Kính 8 Tầng IOC01 & RD01",
+  "wave": 3,
+  "dependencies": [
+    "TASK-008"
+  ],
+  "allowed_files": [
+    "src/gigafactory/builders/southSupplierRdBuilder.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}

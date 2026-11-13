@@ -1,0 +1,18 @@
+{
+  "id": "TASK-013",
+  "title": "Dây Chuyền Máy Móc Bên Trong Xưởng Khi Bật Chế Độ Mở Mái Xưởng (X-Ray)",
+  "wave": 4,
+  "dependencies": [
+    "TASK-006",
+    "TASK-007",
+    "TASK-009"
+  ],
+  "allowed_files": [
+    "src/gigafactory/builders/interiorProductionLines.js"
+  ],
+  "status": "TODO",
+  "branch": null,
+  "pr_url": null,
+  "merged_commit": null,
+  "updated_at": "2026-11-13T06:45:05.006Z"
+}
