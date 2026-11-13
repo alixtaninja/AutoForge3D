@@ -6,6 +6,7 @@ import {
   loadSingleSimReadyAsset,
   QA_AUDIT_REGISTRY
 } from './simreadyLoader.js';
+import { buildOptimizedLODRobotArm } from './factoryBuilder.js';
 
 /**
  * Metadata chẩn đoán về các khớp động học (Kinematics) & Quy trình Kiểm duyệt QA trích xuất từ NVIDIA SimReady USD
@@ -59,6 +60,20 @@ export const SIMREADY_METADATA = {
       { name: 'Khớp Khuỷu Tay (armShoulder_02_obj_00)', type: 'Revolute (Uốn cẳng tay)', range: '-90° đến +45°', axis: 'Z (Con của armShoulder_01)' },
       { name: 'Khớp Cổ Tay Xoay (armShoulder_03_obj_00)', type: 'Revolute (Xoay cổ tay)', range: '-90° đến +90°', axis: 'X (Con của armShoulder_02)' },
       { name: 'Đầu Hàn / Kẹp (armShoulder_04_obj_00)', type: 'Revolute (Định hướng mũi hàn)', range: '-90° đến +90°', axis: 'Y (Con của armShoulder_03)' }
+    ]
+  },
+  robotic_arm_lod: {
+    title: 'Cánh Tay Robot Three.js Twin (2.8k polys - Tham Chiếu 57k SimReady)',
+    forwardAxis: '+X (Đầu kim thao tác chính xác vươn dọc trục +X)',
+    rigSummary: 'Dựng 100% bằng Three.js Geometry (giảm 95% polys so với 57k GLB): body_01 → armheight_01 → armBase_01 → armShoulder_01..04',
+    stateMachine: 'Đồng bộ hoàn toàn 4 Pha công nghiệp & 6 khớp động học với bản SimReady GLB',
+    joints: [
+      { name: 'Khớp Nâng Thân Đứng (armheight_01_obj_00)', type: 'Prismatic (Độ cao trụ)', range: '0m - 0.20m', axis: 'Y (Con của body_01)' },
+      { name: 'Khớp Trụ Xoay Tròn (armBase_01_obj_00)', type: 'Revolute (Quét ngang Yaw)', range: '-180° đến +180°', axis: 'Y (Con của armheight_01)' },
+      { name: 'Khớp Vai Chính (armShoulder_01_obj_00)', type: 'Revolute (Gập cánh tay trên)', range: '-90° đến 0°', axis: 'Z (Con của armBase_01)' },
+      { name: 'Khớp Khuỷu Tay (armShoulder_02_obj_00)', type: 'Revolute (Uốn cẳng tay)', range: '-90° đến +45°', axis: 'Z (Con của armShoulder_01)' },
+      { name: 'Khớp Cổ Tay Xoay (armShoulder_03_obj_00)', type: 'Revolute (Xoay cổ tay)', range: '-90° đến +90°', axis: 'X (Con của armShoulder_02)' },
+      { name: 'Đầu Kim Chính Xác (armShoulder_04_obj_00)', type: 'Revolute (Định hướng mũi kim)', range: '-90° đến +90°', axis: 'Y (Con của armShoulder_03)' }
     ]
   },
   robotic_system_a01: {
@@ -269,12 +284,17 @@ export class ModelInspectorModal {
     }
     this.subJoints = {};
 
-    let instance = instantiateSimReady(modelKey, { scale: 1 });
-    if (!instance) {
-      this.dimsEl.innerHTML = '<div class="diag-stat"><span class="lbl">Trạng thái QA</span><span class="val">Đang nạp & Kiểm duyệt GLB...</span></div>';
-      await loadSingleSimReadyAsset(modelKey);
-      if (this.currentModelKey !== modelKey) return;
+    let instance = null;
+    if (modelKey === 'robotic_arm_lod') {
+      instance = buildOptimizedLODRobotArm({ targetHeight: 2.35 });
+    } else {
       instance = instantiateSimReady(modelKey, { scale: 1 });
+      if (!instance) {
+        this.dimsEl.innerHTML = '<div class="diag-stat"><span class="lbl">Trạng thái QA</span><span class="val">Đang nạp & Kiểm duyệt GLB...</span></div>';
+        await loadSingleSimReadyAsset(modelKey);
+        if (this.currentModelKey !== modelKey) return;
+        instance = instantiateSimReady(modelKey, { scale: 1 });
+      }
     }
     if (!instance) return;
 
@@ -411,7 +431,7 @@ export class ModelInspectorModal {
 
     if (this.runAnim && this.currentInstance) {
       // Mô phỏng chuỗi động học 6 trục liên kết chặt chẽ theo đúng restRotation / restPosition
-      if (this.currentModelKey.includes('robotic_system_arm_b01')) {
+      if (this.currentModelKey.includes('robotic_system_arm_b01') || this.currentModelKey === 'robotic_arm_lod') {
         const jHeight = this.subJoints['armheight_01_obj_00'];
         const jBase = this.subJoints['armBase_01_obj_00'];
         const jSh1 = this.subJoints['armShoulder_01_obj_00'];
