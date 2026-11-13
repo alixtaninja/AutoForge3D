@@ -1,0 +1,524 @@
+{
+  "schema_version": "1.0.0",
+  "project_code": "EV-GIGAFACTORY-PHASE1-350HA",
+  "project_name": "Tổ hợp Nhà máy Sản xuất & Lắp ráp Xe điện Thông minh Thế hệ mới (Kế hoạch 1: Gigafactory Tích hợp)",
+  "reference_benchmarks": [
+    "Tesla Gigafactory Shanghai (GF3) & Berlin (GF4) - Spine layout, Giga-casting, Structural Pack",
+    "Xiaomi EV Super Factory Beijing & BYD Zhengzhou - 9100T Hyper-casting, 100% Dark Factory BIW, Blade/CTB Battery",
+    "VinFast Hải Phòng (335 ha) & North Carolina - Schuler Servo Press, ABB BIW, Dürr RoDip E Paint, On-site Supplier Park"
+  ],
+  "coordinate_system": {
+    "origin_description": "Góc Tây-Nam (Southwest Corner) của khu đất 350 ha ở cao độ mặt đất Z = 0.0m",
+    "units": "meters",
+    "axes": {
+      "X": "West to East (0 to 2500 m)",
+      "Y": "South to North (0 to 1400 m)",
+      "Z": "Vertical elevation (0 to +40 m, underground to -6 m)"
+    },
+    "site_dimensions_m": {
+      "width_x": 2500.0,
+      "length_y": 1400.0,
+      "total_area_m2": 3500000.0,
+      "total_area_ha": 350.0
+    }
+  },
+  "production_kpis": {
+    "phase_1a_capacity_vpy": 300000,
+    "phase_1b_capacity_vpy": 500000,
+    "jobs_per_hour_standard": 60,
+    "jobs_per_hour_max": 90,
+    "takt_time_sec_standard": 60.0,
+    "takt_time_sec_max": 40.0,
+    "operating_shifts_per_day": 3,
+    "effective_hours_per_day": 22.5,
+    "working_days_per_year": 300,
+    "battery_cell_capacity_gwh_yr": 40.0,
+    "e_axle_capacity_units_yr": 800000,
+    "total_industrial_robots": 1820,
+    "total_amr_agv_fleet": 850,
+    "total_workforce_3_shifts": 6800,
+    "vehicle_models": [
+      {
+        "model_id": "EV-BC-SUV",
+        "segment": "B/C Urban Crossover SUV",
+        "length_mm": 4450,
+        "wheelbase_mm": 2750,
+        "architecture_voltage_v": 400,
+        "battery_chemistry": "LFP Blade CTB",
+        "battery_capacity_kwh": 68,
+        "drivetrain": "Single E-Axle RWD (160 kW)"
+      },
+      {
+        "model_id": "EV-D-SEDAN",
+        "segment": "D-Segment Performance Coupe Sedan",
+        "length_mm": 4950,
+        "wheelbase_mm": 3000,
+        "architecture_voltage_v": 800,
+        "battery_chemistry": "NMC High-Nickel Si-Anode CTB",
+        "battery_capacity_kwh": 101,
+        "drivetrain": "Dual E-Axle AWD (495 kW)"
+      },
+      {
+        "model_id": "EV-DE-SUV",
+        "segment": "D/E Full-Size 7-Seat Flagship SUV",
+        "length_mm": 5120,
+        "wheelbase_mm": 3100,
+        "architecture_voltage_v": 800,
+        "battery_chemistry": "NMC CTB",
+        "battery_capacity_kwh": 115,
+        "drivetrain": "Dual E-Axle AWD (450 kW)"
+      },
+      {
+        "model_id": "EV-MPV",
+        "segment": "Luxury Executive Smart MPV",
+        "length_mm": 5200,
+        "wheelbase_mm": 3200,
+        "architecture_voltage_v": 800,
+        "battery_chemistry": "LFP/NMC CTP",
+        "battery_capacity_kwh": 105,
+        "drivetrain": "Dual E-Axle AWD (380 kW)"
+      }
+    ]
+  },
+  "buildings": [
+    {
+      "id": "F01",
+      "name": "Xưởng Đúc Áp Lực Siêu Lớn (Giga-Casting / Hyper-Casting Shop)",
+      "category": "primary_manufacturing",
+      "color_hex": "#E65100",
+      "bounds_m": { "x_min": 80, "y_min": 680, "width_x": 300, "length_y": 240, "height_z": 22.0 },
+      "floors": 1,
+      "gfa_m2": 72000,
+      "column_grid_m": [24, 30],
+      "floor_load_t_m2": 25.0,
+      "power_demand_kw": 9800,
+      "automation_rate_pct": 100.0,
+      "internal_zones": [
+        { "zone_id": "F01-Z1", "name": "Kho Thỏi Nhôm & 6 Tháp Lò Nấu Chảy StrikoMelter", "x_rel": [0, 60], "y_rel": [0, 240] },
+        { "zone_id": "F01-Z2", "name": "6 Đảo Đúc Áp Lực Chân Không 9.100 Tấn (3 Sàn Trước + 3 Sàn Sau)", "x_rel": [60, 160], "y_rel": [0, 240] },
+        { "zone_id": "F01-Z3", "name": "24 Trung Tâm Phay/Khoan CNC 5 Trục GROB G920F", "x_rel": [160, 240], "y_rel": [0, 240] },
+        { "zone_id": "F01-Z4", "name": "Buồng Kiểm Tra X-Ray AI, Quét 3D GOM & Bảo Dưỡng Khuôn", "x_rel": [240, 300], "y_rel": [0, 240] }
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "Xưởng Dập Liên Hoàn Tốc Độ Cao (Servo Stamping Shop)",
+      "category": "primary_manufacturing",
+      "color_hex": "#F57C00",
+      "bounds_m": { "x_min": 80, "y_min": 460, "width_x": 300, "length_y": 200, "height_z": 24.0, "basement_z": -6.0 },
+      "floors": 1,
+      "gfa_m2": 60000,
+      "column_grid_m": [24, 30],
+      "floor_load_t_m2": 30.0,
+      "power_demand_kw": 11200,
+      "automation_rate_pct": 98.0,
+      "internal_zones": [
+        { "zone_id": "F02-Z1", "name": "Kho Cuộn Tôn/Nhôm Tự Động & 2 Chuyền Cắt Phôi (Laser & Die Blanking)", "x_rel": [0, 50], "y_rel": [0, 200] },
+        { "zone_id": "F02-Z2", "name": "Kho Khuôn Dập Trung Tâm (180 Bộ Khuôn) & Bàn Thay Khuôn Tự Động 180s", "x_rel": [50, 130], "y_rel": [0, 200] },
+        { "zone_id": "F02-Z3", "name": "4 Dây Chuyền Dập Liên Hoàn Schuler ServoDirect (2500T + 4x1200T) & 1 Transfer Press", "x_rel": [130, 230], "y_rel": [0, 200] },
+        { "zone_id": "F02-Z4", "name": "Trạm Kiểm Tra Ánh Sáng Xanh 3D & Kho Đệm Phôi Dập Tự Động", "x_rel": [230, 300], "y_rel": [0, 200] }
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "Xưởng Hàn Thân Vỏ Tự Động 100% (BIW Dark Factory)",
+      "category": "primary_manufacturing",
+      "color_hex": "#D84315",
+      "bounds_m": { "x_min": 430, "y_min": 460, "width_x": 550, "length_y": 460, "height_z": 16.0 },
+      "floors": 1,
+      "gfa_m2": 290000,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 10.0,
+      "power_demand_kw": 24500,
+      "automation_rate_pct": 100.0,
+      "robot_count": 1250,
+      "internal_zones": [
+        { "zone_id": "F03-Z1", "name": "Tổ Hợp Sàn Trước, Sàn Giữa, Sàn Sau & Ghép Sàn (SPR, FDS, Keo Kết Cấu)", "x_rel": [0, 160], "y_rel": [0, 460] },
+        { "zone_id": "F03-Z2", "name": "Dây Chuyền Vách Hông Trái & Phải (Body Side Inner/Outer LH & RH)", "x_rel": [160, 320], "y_rel": [230, 460] },
+        { "zone_id": "F03-Z3", "name": "Dây Chuyền Cửa, Capo, Cốp (Roller Hemming & Induction Curing)", "x_rel": [160, 320], "y_rel": [0, 230] },
+        { "zone_id": "F03-Z4", "name": "2 Chuyền Định Hình OpenGate, Hàn Gia Cường Respot & Hàn Laser Mui", "x_rel": [320, 470], "y_rel": [0, 460] },
+        { "zone_id": "F03-Z5", "name": "Lắp Vỏ Động, Đo Lường Laser Radar 100% Inline & Kho Đệm WBS (320 Xe)", "x_rel": [470, 550], "y_rel": [0, 460] }
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "Xưởng Sơn Sinh Thái Thông Minh 3 Tầng (Eco-Smart Paint Shop)",
+      "category": "primary_manufacturing",
+      "color_hex": "#0288D1",
+      "bounds_m": { "x_min": 1040, "y_min": 520, "width_x": 400, "length_y": 360, "height_z": 28.5 },
+      "floors": 3,
+      "gfa_m2": 432000,
+      "column_grid_m": [18, 24],
+      "floor_load_t_m2": 8.0,
+      "power_demand_kw": 18600,
+      "automation_rate_pct": 98.0,
+      "robot_count": 128,
+      "internal_zones": [
+        { "zone_id": "F04-FL1", "name": "Tầng 1 (+0m): Phòng Pha Sơn ATEX, Lọc Khô EcoDryScrubber, Đốt VOC RTO & AHU", "x_rel": [0, 400], "y_rel": [0, 360] },
+        { "zone_id": "F04-FL2", "name": "Tầng 2 (+9m): Robot Phun Keo Gầm/LASD, Kiểm Tra Ánh Sáng AI & Kho PBS (360 Xe)", "x_rel": [0, 400], "y_rel": [0, 360] },
+        { "zone_id": "F04-FL3", "name": "Tầng 3 (+18m): Tiền Xử Lý Oxsilan, Nhúng Xoay 360 RoDip E, Lò Sấy EcoInCure & 84 Robot EcoBell3", "x_rel": [0, 400], "y_rel": [0, 360] }
+      ]
+    },
+    {
+      "id": "F05",
+      "name": "Xưởng Lắp Ráp Tổng Thành Hình Chữ E (General Assembly - Dock-to-Line)",
+      "category": "primary_manufacturing",
+      "color_hex": "#2E7D32",
+      "bounds_m": { "x_min": 1500, "y_min": 460, "width_x": 650, "length_y": 460, "height_z": 16.5 },
+      "floors": 1,
+      "gfa_m2": 345000,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 8.0,
+      "power_demand_kw": 12400,
+      "automation_rate_pct": 55.0,
+      "robot_count": 64,
+      "internal_zones": [
+        { "zone_id": "F05-Z1", "name": "Thân Bắc Chữ E: Tháo Cửa (Doors-Off), Trim Line 1 & 2 (Skillet), Siêu Thị Kitting AMR", "x_rel": [0, 650], "y_rel": [300, 460] },
+        { "zone_id": "F05-Z2", "name": "Nhánh Tây Chữ E: Chuyền Phụ Buồng Lái (Cockpit) & Mô-đun Đầu Xe", "x_rel": [0, 180], "y_rel": [0, 300] },
+        { "zone_id": "F05-Z3", "name": "Nhánh Giữa Chữ E: Chassis Line 1 & 2 (EMS) + Trạm Marriage 48 Trục Servo Tự Động", "x_rel": [230, 420], "y_rel": [0, 300] },
+        { "zone_id": "F05-Z4", "name": "Nhánh Đông Chữ E: Final Line 1 & 2, Lắp Kính/Ghế/Bánh Xe Robot, Nạp Dung Dịch & OTA Roll-Off", "x_rel": [470, 650], "y_rel": [0, 300] }
+      ]
+    },
+    {
+      "id": "F06A",
+      "name": "Nhà Máy Sản Xuất Cell Pin 40 GWh (Battery Cell Gigafactory)",
+      "category": "battery_and_powertrain",
+      "color_hex": "#6A1B9A",
+      "bounds_m": { "x_min": 840, "y_min": 1020, "width_x": 700, "length_y": 320, "height_z": 18.0 },
+      "floors": 2,
+      "gfa_m2": 350000,
+      "column_grid_m": [18, 24],
+      "floor_load_t_m2": 12.0,
+      "power_demand_kw": 38000,
+      "automation_rate_pct": 96.0,
+      "internal_zones": [
+        { "zone_id": "F06A-Z1", "name": "Khâu Đầu: Trộn Bùn Liên Tục, Tráng Cực 2 Mặt 100m/p, Cán Ép & Thu Hồi NMP", "x_rel": [0, 180], "y_rel": [0, 320] },
+        { "zone_id": "F06A-Z2", "name": "Khâu Giữa (Phòng Khô -50°C): Cắt Laser, Xếp Chồng Z-Stacking 0.125s, Hàn Cực & Châm Dịch", "x_rel": [180, 440], "y_rel": [0, 320] },
+        { "zone_id": "F06A-Z3", "name": "Khâu Cuối: Kệ Cao Tầng 18.000 Kênh Sạc Hóa Thành (Formation), Ủ Nhiệt (Aging) & Phân Loại", "x_rel": [440, 700], "y_rel": [0, 320] }
+      ]
+    },
+    {
+      "id": "F06B",
+      "name": "Xưởng Đóng Gói Pack Pin CTB / CTP (Battery Pack Assembly)",
+      "category": "battery_and_powertrain",
+      "color_hex": "#8E24AA",
+      "bounds_m": { "x_min": 1580, "y_min": 1020, "width_x": 400, "length_y": 320, "height_z": 15.0 },
+      "floors": 1,
+      "gfa_m2": 128000,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 10.0,
+      "power_demand_kw": 9200,
+      "automation_rate_pct": 94.0,
+      "internal_zones": [
+        { "zone_id": "F06B-Z1", "name": "Chuẩn Bị Khay Nhôm, Lắp Tấm Làm Mát Lỏng & Bơm Keo Dẫn Nhiệt", "x_rel": [0, 120], "y_rel": [0, 320] },
+        { "zone_id": "F06B-Z2", "name": "4 Chuyền Xếp Cell CTB, Hàn Laser Busbar Nhôm-Đồng (OCT) & Lắp BMS/BDU", "x_rel": [120, 280], "y_rel": [0, 320] },
+        { "zone_id": "F06B-Z3", "name": "Thử Kín Khí Heli IP68/IP69K & 48 Trạm Kiểm Tra Nạp/Xả EOL Pack", "x_rel": [280, 400], "y_rel": [0, 320] }
+      ]
+    },
+    {
+      "id": "F07",
+      "name": "Xưởng Chế Tạo Động Cơ Điện E-Axle & Điện Tử Công Suất 800V SiC",
+      "category": "battery_and_powertrain",
+      "color_hex": "#4527A0",
+      "bounds_m": { "x_min": 2020, "y_min": 1020, "width_x": 400, "length_y": 320, "height_z": 15.0 },
+      "floors": 2,
+      "gfa_m2": 180000,
+      "column_grid_m": [18, 24],
+      "floor_load_t_m2": 10.0,
+      "power_demand_kw": 11500,
+      "automation_rate_pct": 95.0,
+      "internal_zones": [
+        { "zone_id": "F07-Z1", "name": "Tầng 1 Tây: 4 Chuyền Quấn Dây Đồng Dẹt Hairpin Stator & Tẩm Nhựa Chân Không", "x_rel": [0, 150], "y_rel": [0, 320] },
+        { "zone_id": "F07-Z2", "name": "Tầng 1 Giữa: 4 Chuyền Rotor Nam Châm Vĩnh Cửu, Bọc Sợi Carbon & Mài Bánh Răng Reishauer", "x_rel": [150, 280], "y_rel": [0, 320] },
+        { "zone_id": "F07-Z3", "name": "Tầng 1 Đông: Tổng Lắp E-Axle 8-in-1 & 12 Buồng Thử Tải Cách Âm NVH @ 22.000 rpm", "x_rel": [280, 400], "y_rel": [0, 320] },
+        { "zone_id": "F07-Z4", "name": "Tầng 2 (+7.5m): Phòng Sạch SMT ISO-6 Sản Xuất Biến Tần 800V SiC, OBC, DC-DC & BMS", "x_rel": [0, 400], "y_rel": [0, 320] }
+      ]
+    },
+    {
+      "id": "F08-1",
+      "name": "Xưởng Phụ Trợ 1: Ép Phun Nhựa & Sơn Cản (Plastic Injection & Bumper Paint)",
+      "category": "supplier_park",
+      "color_hex": "#00838F",
+      "bounds_m": { "x_min": 430, "y_min": 250, "width_x": 260, "length_y": 150, "height_z": 16.0 },
+      "floors": 1,
+      "gfa_m2": 39000,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 15.0,
+      "power_demand_kw": 6800
+    },
+    {
+      "id": "F08-2",
+      "name": "Xưởng Phụ Trợ 2: Sản Xuất Ghế Ngồi JIS (Just-In-Sequence Seat Plant)",
+      "category": "supplier_park",
+      "color_hex": "#00838F",
+      "bounds_m": { "x_min": 710, "y_min": 250, "width_x": 260, "length_y": 150, "height_z": 14.0 },
+      "floors": 1,
+      "gfa_m2": 39000,
+      "column_grid_m": [18, 24],
+      "floor_load_t_m2": 5.0,
+      "power_demand_kw": 3200
+    },
+    {
+      "id": "F08-3",
+      "name": "Xưởng Phụ Trợ 3: Dập Nóng Thép Siêu Cường 2000 MPa (Hot Stamping Shop)",
+      "category": "supplier_park",
+      "color_hex": "#00838F",
+      "bounds_m": { "x_min": 430, "y_min": 80, "width_x": 260, "length_y": 150, "height_z": 16.0 },
+      "floors": 1,
+      "gfa_m2": 39000,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 20.0,
+      "power_demand_kw": 8500
+    },
+    {
+      "id": "F08-4",
+      "name": "Xưởng Phụ Trợ 4: Mô-đun Kính, Cửa & Buồng Lái (Cockpit & Glazing)",
+      "category": "supplier_park",
+      "color_hex": "#00838F",
+      "bounds_m": { "x_min": 710, "y_min": 80, "width_x": 260, "length_y": 150, "height_z": 14.0 },
+      "floors": 1,
+      "gfa_m2": 39000,
+      "column_grid_m": [18, 24],
+      "floor_load_t_m2": 5.0,
+      "power_demand_kw": 2900
+    },
+    {
+      "id": "F08-5",
+      "name": "Xưởng Phụ Trợ 5: Bó Dây Điện Cao Áp/Thấp Áp (HV/LV Wiring Harness)",
+      "category": "supplier_park",
+      "color_hex": "#00838F",
+      "bounds_m": { "x_min": 990, "y_min": 80, "width_x": 260, "length_y": 320, "height_z": 14.0 },
+      "floors": 2,
+      "gfa_m2": 120000,
+      "column_grid_m": [18, 18],
+      "floor_load_t_m2": 5.0,
+      "power_demand_kw": 4100
+    },
+    {
+      "id": "F09",
+      "name": "Trung Tâm Kiểm Định Cuối Chuyền & Hiệu Chuẩn ADAS (EOL & Calibration)",
+      "category": "testing_and_logistics",
+      "color_hex": "#388E3C",
+      "bounds_m": { "x_min": 2200, "y_min": 520, "width_x": 220, "length_y": 360, "height_z": 12.0 },
+      "floors": 1,
+      "gfa_m2": 79200,
+      "column_grid_m": [24, 24],
+      "floor_load_t_m2": 6.0,
+      "power_demand_kw": 5400
+    },
+    {
+      "id": "WH01",
+      "name": "Kho Tự Động Cao Tầng AS/RS (80.000 Pallet) & Trung Tâm AGV",
+      "category": "testing_and_logistics",
+      "color_hex": "#546E7A",
+      "bounds_m": { "x_min": 80, "y_min": 80, "width_x": 300, "length_y": 320, "height_z": 32.0 },
+      "floors": 1,
+      "gfa_m2": 96000,
+      "column_grid_m": [12, 24],
+      "floor_load_t_m2": 18.0,
+      "power_demand_kw": 4800
+    },
+    {
+      "id": "IOC01",
+      "name": "Tòa Nhà Điều Hành Trung Tâm, AI Data Center & Văn Phòng",
+      "category": "rd_and_admin",
+      "color_hex": "#1565C0",
+      "bounds_m": { "x_min": 1300, "y_min": 80, "width_x": 180, "length_y": 140, "height_z": 36.0 },
+      "floors": 8,
+      "gfa_m2": 85000,
+      "column_grid_m": [9, 12],
+      "floor_load_t_m2": 1.5,
+      "power_demand_kw": 6500
+    },
+    {
+      "id": "RD01",
+      "name": "Viện R&D, Lab Thử Nghiệm Pin, Hầm Gió Khí Động Học & Nhà Thử Va Chạm",
+      "category": "rd_and_admin",
+      "color_hex": "#1976D2",
+      "bounds_m": { "x_min": 1500, "y_min": 80, "width_x": 280, "length_y": 300, "height_z": 18.0 },
+      "floors": 2,
+      "gfa_m2": 110000,
+      "column_grid_m": [18, 30],
+      "floor_load_t_m2": 12.0,
+      "power_demand_kw": 14200
+    },
+    {
+      "id": "PG01",
+      "name": "Đường Thử Xe Đa Địa Hình Khép Kín 3.8 km (16-Surface Proving Ground)",
+      "category": "testing_and_logistics",
+      "color_hex": "#455A64",
+      "bounds_m": { "x_min": 1820, "y_min": 60, "width_x": 630, "length_y": 220, "height_z": 2.0 },
+      "floors": 1,
+      "gfa_m2": 138600,
+      "column_grid_m": [0, 0],
+      "floor_load_t_m2": 15.0,
+      "power_demand_kw": 600
+    },
+    {
+      "id": "LY01",
+      "name": "Bãi Lưu Kho Xe Thành Phẩm Có Mái Điện Mặt Trời & Cổng Xuất Hàng",
+      "category": "testing_and_logistics",
+      "color_hex": "#607D8B",
+      "bounds_m": { "x_min": 1820, "y_min": 300, "width_x": 630, "length_y": 120, "height_z": 6.0 },
+      "floors": 1,
+      "gfa_m2": 75600,
+      "column_grid_m": [12, 18],
+      "floor_load_t_m2": 5.0,
+      "power_demand_kw": 2400
+    },
+    {
+      "id": "UT01",
+      "name": "Trạm Biến Áp 220kV/110kV (350 MVA) & Hệ Thống Lưu Trữ BESS (100 MWh)",
+      "category": "utilities_and_energy",
+      "color_hex": "#FBC02D",
+      "bounds_m": { "x_min": 80, "y_min": 1050, "width_x": 240, "length_y": 270, "height_z": 12.0 },
+      "floors": 1,
+      "gfa_m2": 64800,
+      "column_grid_m": [12, 12],
+      "floor_load_t_m2": 10.0,
+      "power_demand_kw": 800
+    },
+    {
+      "id": "UT02",
+      "name": "Trung Tâm Năng Lượng Tiện Ích CUB (Chiller 42.000 RT, Khí Nén, Bơm Nhiệt)",
+      "category": "utilities_and_energy",
+      "color_hex": "#F9A825",
+      "bounds_m": { "x_min": 360, "y_min": 1050, "width_x": 160, "length_y": 270, "height_z": 14.0 },
+      "floors": 2,
+      "gfa_m2": 43200,
+      "column_grid_m": [12, 18],
+      "floor_load_t_m2": 12.0,
+      "power_demand_kw": 28000
+    },
+    {
+      "id": "UT03",
+      "name": "Trạm Sản Xuất & Tinh Chế Khí Công Nghiệp (N2, Ar, CO2, Helium Recovery)",
+      "category": "utilities_and_energy",
+      "color_hex": "#F57F17",
+      "bounds_m": { "x_min": 540, "y_min": 1050, "width_x": 100, "length_y": 270, "height_z": 15.0 },
+      "floors": 1,
+      "gfa_m2": 27000,
+      "column_grid_m": [12, 12],
+      "floor_load_t_m2": 15.0,
+      "power_demand_kw": 3600
+    },
+    {
+      "id": "UT04",
+      "name": "Nhà Máy Nước Cấp DI & Xử Lý Nước Thải Không Xả Lỏng (ZLD Plant)",
+      "category": "utilities_and_energy",
+      "color_hex": "#0097A7",
+      "bounds_m": { "x_min": 660, "y_min": 1050, "width_x": 120, "length_y": 270, "height_z": 10.0, "basement_z": -5.0 },
+      "floors": 1,
+      "gfa_m2": 32400,
+      "column_grid_m": [12, 12],
+      "floor_load_t_m2": 15.0,
+      "power_demand_kw": 4200
+    },
+    {
+      "id": "UT05",
+      "name": "Trạm Cứu Hỏa Chuyên Dụng Xe Điện, Y Tế & Căng Tin Trung Tâm",
+      "category": "rd_and_admin",
+      "color_hex": "#C62828",
+      "bounds_m": { "x_min": 1300, "y_min": 250, "width_x": 180, "length_y": 130, "height_z": 12.0 },
+      "floors": 3,
+      "gfa_m2": 45000,
+      "column_grid_m": [12, 12],
+      "floor_load_t_m2": 2.5,
+      "power_demand_kw": 1800
+    }
+  ],
+  "skybridges": [
+    {
+      "id": "SB-01",
+      "name": "Cầu Băng Tải Thân Vỏ Trắng (BIW F03 -> Tầng 3 Xưởng Sơn F04)",
+      "from_building": "F03",
+      "to_building": "F04",
+      "waypoints_xyz_m": [
+        [980, 720, 9.5],
+        [1040, 720, 18.0]
+      ],
+      "width_m": 8.0,
+      "height_m": 5.5,
+      "conveyor_type": "Enclosed Overhead EMS Monorail",
+      "capacity_jph": 100
+    },
+    {
+      "id": "SB-02",
+      "name": "Cầu Băng Tải Thân Vỏ Đã Sơn (Tầng 2 Xưởng Sơn F04 -> Xưởng Lắp Ráp F05)",
+      "from_building": "F04",
+      "to_building": "F05",
+      "waypoints_xyz_m": [
+        [1440, 780, 9.5],
+        [1500, 780, 9.5]
+      ],
+      "width_m": 8.0,
+      "height_m": 5.5,
+      "conveyor_type": "Enclosed Skid Conveyor",
+      "capacity_jph": 100
+    },
+    {
+      "id": "SB-03",
+      "name": "Cầu Băng Tải Nặng Pack Pin CTB/CTP (F06B -> Trạm Marriage Xưởng Lắp Ráp F05)",
+      "from_building": "F06B",
+      "to_building": "F05",
+      "waypoints_xyz_m": [
+        [1820, 1020, 10.0],
+        [1820, 920, 10.0]
+      ],
+      "width_m": 7.0,
+      "height_m": 5.0,
+      "conveyor_type": "Heavy-Duty Twin-Chain Pallet Conveyor (1.2t/pack)",
+      "capacity_jph": 100
+    },
+    {
+      "id": "SB-04",
+      "name": "Cầu Băng Tải Cụm Động Cơ E-Axle Trước/Sau (F07 -> Nhánh Khung Gầm F05)",
+      "from_building": "F07",
+      "to_building": "F05",
+      "waypoints_xyz_m": [
+        [2080, 1020, 10.0],
+        [2080, 920, 10.0]
+      ],
+      "width_m": 6.0,
+      "height_m": 4.5,
+      "conveyor_type": "Overhead Power-and-Free Carrier",
+      "capacity_jph": 200
+    },
+    {
+      "id": "SB-05",
+      "name": "Cầu Băng Tải Liên Hợp Phụ Trợ JIS (Ghế F08-2, Cản F08-1, Dây Điện F08-5 -> F05)",
+      "from_building": "F08-2",
+      "to_building": "F05",
+      "waypoints_xyz_m": [
+        [840, 400, 11.0],
+        [1250, 400, 11.0],
+        [1600, 430, 11.0],
+        [1600, 460, 9.0]
+      ],
+      "width_m": 9.0,
+      "height_m": 5.5,
+      "conveyor_type": "Multi-Lane JIS Electrified Monorail",
+      "capacity_jph": 100
+    }
+  ],
+  "agv_ground_corridors": [
+    {
+      "corridor_id": "AGV-C1",
+      "name": "Tuyến AGV Hạng Nặng Chuyển Phôi Đúc (F01 -> F03) & Phôi Dập (F02 -> F03)",
+      "waypoints_xy_m": [[380, 800], [430, 800], [380, 560], [430, 560]],
+      "vehicle_type": "Heavy Omni-Directional AGV 15T"
+    },
+    {
+      "corridor_id": "AGV-C2",
+      "name": "Tuyến AMR Cấp Phát Linh Kiện Siêu Thị (Kho AS/RS WH01 -> F03, F05, F08)",
+      "waypoints_xy_m": [[380, 240], [410, 430], [1500, 430], [1850, 430]],
+      "vehicle_type": "5G Autonomous Mobile Robot (AMR 1.5T)"
+    },
+    {
+      "corridor_id": "AGV-C3",
+      "name": "Tuyến Tự Hành Xe Thành Phẩm (Cửa Xuất F05 -> Kiểm Định F09 -> Đường Thử PG01 -> Bãi Xuất LY01)",
+      "waypoints_xy_m": [[2150, 700], [2200, 700], [2310, 520], [2310, 280], [2100, 360]],
+      "vehicle_type": "Autonomous Vehicle Roll-Off (V2X Marshalling)"
+    }
+  ]
+}
