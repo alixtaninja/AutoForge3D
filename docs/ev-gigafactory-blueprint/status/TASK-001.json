@@ -7,9 +7,9 @@
     "src/gigafactory/config/masterSpecLoader.js",
     "src/gigafactory/config/constructionStagesSpec.js"
   ],
-  "status": "TODO",
-  "branch": null,
+  "status": "IN_REVIEW",
+  "branch": "task/TASK-001",
   "pr_url": null,
   "merged_commit": null,
-  "updated_at": "2026-11-13T06:45:05.002Z"
+  "updated_at": "2026-11-13T06:56:30.000Z"
 }
