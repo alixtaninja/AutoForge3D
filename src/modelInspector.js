@@ -7,6 +7,14 @@ import {
   QA_AUDIT_REGISTRY
 } from './simreadyLoader.js';
 import { buildOptimizedLODRobotArm } from './factoryBuilder.js';
+import {
+  buildForkliftTwin,
+  buildMultiArmStationTwin,
+  buildConveyorTwin,
+  buildRackTwin,
+  buildElectricEngineTwin,
+  buildWheelTwin
+} from './threejsTwins.js';
 
 /**
  * Metadata chẩn đoán về các khớp động học (Kinematics) & Quy trình Kiểm duyệt QA trích xuất từ NVIDIA SimReady USD
@@ -287,6 +295,20 @@ export class ModelInspectorModal {
     let instance = null;
     if (modelKey === 'robotic_arm_lod') {
       instance = buildOptimizedLODRobotArm({ targetHeight: 2.35 });
+    } else if (modelKey === 'vehicle_forklift_orange_a01_twin') {
+      instance = buildForkliftTwin({ color: 'orange', targetHeight: 1.96 });
+    } else if (modelKey === 'vehicle_forklift_blue_a01_twin') {
+      instance = buildForkliftTwin({ color: 'blue', targetHeight: 1.96 });
+    } else if (modelKey === 'robotic_system_a01_twin') {
+      instance = buildMultiArmStationTwin({ targetHeight: 2.4 });
+    } else if (modelKey === 'conveyor_belt_a05_twin') {
+      instance = buildConveyorTwin({ targetLength: 2.4 });
+    } else if (modelKey === 'rack_h3m_s02_twin') {
+      instance = buildRackTwin({ targetHeight: 3.0 });
+    } else if (modelKey === 'engineAssembly_electric_engine_a01_twin') {
+      instance = buildElectricEngineTwin({ targetHeight: 0.85 });
+    } else if (modelKey === 'wheelAssembly_tire_c01_twin') {
+      instance = buildWheelTwin({ targetHeight: 0.72 });
     } else {
       instance = instantiateSimReady(modelKey, { scale: 1 });
       if (!instance) {

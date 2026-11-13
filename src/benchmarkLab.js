@@ -3,6 +3,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { instantiateSimReady, onSimReadyAssetReady, QA_AUDIT_REGISTRY } from './simreadyLoader.js';
 import { buildDetailedTruck, buildForklift, buildSleekCar, buildOptimizedLODRobotArm } from './factoryBuilder.js';
+import {
+  buildForkliftTwin,
+  buildMultiArmStationTwin,
+  buildConveyorTwin,
+  buildRackTwin,
+  buildElectricEngineTwin,
+  buildWheelTwin
+} from './threejsTwins.js';
 
 export class BenchmarkLabModal {
   constructor() {
@@ -347,6 +355,28 @@ export class BenchmarkLabModal {
       });
       this.animatedNodes.push({ type: 'arm', joints, seed: index * 0.4 });
       return lodArm;
+    }
+
+    if (assetName.endsWith('_twin')) {
+      let twin = null;
+      if (assetName === 'vehicle_forklift_orange_a01_twin') twin = buildForkliftTwin({ color: 'orange', targetHeight: 1.96 });
+      else if (assetName === 'vehicle_forklift_blue_a01_twin') twin = buildForkliftTwin({ color: 'blue', targetHeight: 1.96 });
+      else if (assetName === 'robotic_system_a01_twin') twin = buildMultiArmStationTwin({ targetHeight: 2.4 });
+      else if (assetName === 'conveyor_belt_a05_twin') twin = buildConveyorTwin({ targetLength: 2.4 });
+      else if (assetName === 'rack_h3m_s02_twin') twin = buildRackTwin({ targetHeight: 3.0 });
+      else if (assetName === 'engineAssembly_electric_engine_a01_twin') twin = buildElectricEngineTwin({ targetHeight: 0.85 });
+      else if (assetName === 'wheelAssembly_tire_c01_twin') twin = buildWheelTwin({ targetHeight: 0.72 });
+
+      if (twin && assetName.includes('forklift')) {
+        let forkNode = null;
+        let rudderNode = null;
+        twin.traverse((c) => {
+          if (c.name === 'sm_fork_a01_obj_00') forkNode = c;
+          if (c.name === 'sm_rudder_a01_obj_00') rudderNode = c;
+        });
+        this.animatedNodes.push({ type: 'forklift', forkNode, rudderNode, seed: index * 0.5 });
+      }
+      return twin;
     }
 
     // Các mô hình NVIDIA SimReady GLB
