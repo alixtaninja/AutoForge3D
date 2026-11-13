@@ -1,0 +1,124 @@
+{
+  "manifest_version": "1.0.0",
+  "branch": "feat/ev-gigafactory-city-builder",
+  "project_id": "EV-GIGAFACTORY-CITY-BUILDER-350HA",
+  "stream_mode_config": {
+    "total_epc_months": 24,
+    "default_playback_speed_sec_per_month": 5.0,
+    "target_fps": 60,
+    "max_overview_triangles": 450000,
+    "max_overview_draw_calls": 350
+  },
+  "epochs": [
+    {
+      "epoch_id": "E0",
+      "name": "Khảo sát Địa chất, Giải phóng Mặt bằng & San lấp 350 ha",
+      "month_range": [0, 2],
+      "progress_pct_range": [0, 12],
+      "active_agents": ["UrbanPlanner_CivilInfra_Agent", "ConstructionFleet_PropForge_Agent"],
+      "key_activities": [
+        "Đóng cọc mốc ranh giới 24 lô công trình (X: 0..2500m, Y: 0..1400m)",
+        "Đào hồ điều hòa sinh thái & kênh thoát nước mưa",
+        "Đội xe ủi, máy xúc, xe ben san phẳng nền đất trục trung tâm"
+      ]
+    },
+    {
+      "epoch_id": "E1",
+      "name": "Quy hoạch Đại lộ, Đèn đường, Đèn tín hiệu & Biển chỉ đường",
+      "month_range": [3, 5],
+      "progress_pct_range": [12, 25],
+      "active_agents": ["UrbanPlanner_CivilInfra_Agent"],
+      "key_activities": [
+        "Trải thảm nhựa Đại lộ Nam 6 làn, Trục Logistics Tây và 2 Đại lộ Đông-Tây",
+        "Kẻ vạch phân làn, lối đi bộ sang đường, vòng xuyến và mũi tên chỉ hướng",
+        "Lắp đặt 600 cột đèn đường LED, 32 cụm đèn tín hiệu giao thông 3 màu và 180 biển chỉ dẫn phân khu"
+      ]
+    },
+    {
+      "epoch_id": "E2",
+      "name": "Ép cọc, Đào móng sâu (-6m) & Dựng Trạm Điện 220kV",
+      "month_range": [6, 9],
+      "progress_pct_range": [25, 42],
+      "active_agents": ["Structural_EPC_Builder_Agent", "ConstructionFleet_PropForge_Agent"],
+      "key_activities": [
+        "Đào tầng hầm phế liệu -6m tại Xưởng Dập F02 và bể ngầm -5m tại UT04",
+        "Đóng cọc bê tông dự ứng lực, ghép ván ép cốt pha (Plywood) và đổ bê tông móng 60 tấn/m2 cho Đảo đúc F01",
+        "Xây dựng hoàn chỉnh Trạm biến áp 220kV (UT01) để cấp điện thi công"
+      ]
+    },
+    {
+      "epoch_id": "E3",
+      "name": "Lắp dựng Đại Khung Kèo Thép Trục Xương Sống & Cầu Skybridge",
+      "month_range": [10, 14],
+      "progress_pct_range": [42, 62],
+      "active_agents": ["Structural_EPC_Builder_Agent", "RealWorld_ArchResearcher_Agent"],
+      "key_activities": [
+        "18 Cẩu tháp & 12 Cẩu bánh xích lắp dựng cột thép chữ H (bước cột 24x30m) cho F01, F02, F03, F04, F05",
+        "Dựng khung kệ cao tầng 32m cho Kho tự động AS/RS (WH01)",
+        "Lắp nhịp dầm thép cho 5 cầu băng tải trên cao Skybridge SB-01..SB-05"
+      ]
+    },
+    {
+      "epoch_id": "E4",
+      "name": "Hoàn thiện Vỏ Kiến trúc, Mái Điện Mặt Trời 120MWp & Cụm Pin/Phụ trợ",
+      "month_range": [15, 18],
+      "progress_pct_range": [62, 80],
+      "active_agents": ["Structural_EPC_Builder_Agent", "RealWorld_ArchResearcher_Agent"],
+      "key_activities": [
+        "Lợp tấm vách cách nhiệt, cửa cuốn Dock Door (88 cổng chữ E tại F05) và vách kính tòa tháp IOC01 8 tầng",
+        "Hoàn thiện Siêu nhà máy Cell Pin F06A, Pack Pin F06B, Động cơ F07 và 5 Xưởng Phụ trợ F08-1..5",
+        "Lắp đặt 820.000 m2 Pin mặt trời áp mái, tháp đốt nhiệt RTO Xưởng Sơn F04 và tháp giải nhiệt Chiller UT02"
+      ]
+    },
+    {
+      "epoch_id": "E5",
+      "name": "Thi công Đường thử 16 Địa hình PG01 & Đưa Dây chuyền Máy móc vào Xưởng",
+      "month_range": [19, 21],
+      "progress_pct_range": [80, 92],
+      "active_agents": ["ProcessLine_Equipment_Agent", "ConstructionFleet_PropForge_Agent"],
+      "key_activities": [
+        "Trải mặt đường đặc chủng 3.8km cho Đường thử PG01 (vòng nghiêng Parabol, đá Bỉ, cầu dốc 30%, máng ngập nước)",
+        "Đoàn xe rơ-moóc siêu trường đưa 6 máy đúc 9.100T, dây chuyền dập Schuler và 1.820 robot vào trong các xưởng",
+        "Tháo dỡ cẩu tháp, giàn giáo và trồng 2.000 cây xanh cảnh quan"
+      ]
+    },
+    {
+      "epoch_id": "E6",
+      "name": "Chạy thử Liên động & Vận hành Toàn trình Siêu Nhà Máy (Live Digital Twin)",
+      "month_range": [22, 24],
+      "progress_pct_range": [92, 100],
+      "active_agents": ["ProcessLine_Equipment_Agent", "YouTube_StreamDirector_PerfQA_Agent"],
+      "key_activities": [
+        "Bật sáng toàn bộ hệ thống đèn kiến trúc, đèn đường, đèn giao thông và bảng LED",
+        "850 xe tự hành AGV/AMR và băng tải trên 5 cầu Skybridge vận chuyển thân xe, Pack Pin, E-Axle",
+        "Xe điện thành phẩm tự hành lăn bánh từ F05 -> Kiểm định F09 -> Chạy thử trên đường đua PG01 -> Bãi xuất LY01"
+      ]
+    }
+  ],
+  "road_network_spec": {
+    "main_boulevards": [
+      { "id": "RD-SOUTH-MAIN", "name": "Đại lộ Đại bản doanh Phía Nam (6 làn)", "x_range": [0, 2500], "y_center": 45, "width_m": 36, "lanes": 6 },
+      { "id": "RD-SPINE-SOUTH", "name": "Đại lộ Xương Sống Nam (Dưới cầu SB-05)", "x_range": [40, 2460], "y_center": 430, "width_m": 24, "lanes": 4 },
+      { "id": "RD-SPINE-NORTH", "name": "Đại lộ Xương Sống Bắc (Dưới cầu SB-03/04)", "x_range": [40, 2460], "y_center": 970, "width_m": 24, "lanes": 4 },
+      { "id": "RD-WEST-LOGISTICS", "name": "Trục Logistics Hạng Nặng Phía Tây", "x_center": 45, "y_range": [45, 1360], "width_m": 28, "lanes": 4 },
+      { "id": "RD-CROSS-1", "name": "Trục Kết Nối Bắc-Nam 1 (Giữa F01/F02 và F03)", "x_center": 405, "y_range": [45, 1360], "width_m": 20, "lanes": 4 },
+      { "id": "RD-CROSS-2", "name": "Trục Kết Nối Bắc-Nam 2 (Giữa F03 và F04)", "x_center": 1010, "y_range": [45, 1000], "width_m": 20, "lanes": 4 },
+      { "id": "RD-CROSS-3", "name": "Trục Kết Nối Bắc-Nam 3 (Giữa F04 và F05)", "x_center": 1470, "y_range": [45, 1000], "width_m": 20, "lanes": 4 },
+      { "id": "RD-CROSS-4", "name": "Trục Kết Nối Đông (Giữa F05 và F09/PG01)", "x_center": 2175, "y_range": [45, 1360], "width_m": 22, "lanes": 4 }
+    ]
+  },
+  "missing_3d_models_to_build": [
+    { "model_id": "tower_crane_twin", "nameVi": "Cẩu Tháp Công Trường (Tower Crane 60m)", "category": "construction_machinery", "target_tris": 1800, "priority": "P1" },
+    { "model_id": "crawler_crane_twin", "nameVi": "Xe Cẩu Bánh Xích 250T (Crawler Crane)", "category": "construction_machinery", "target_tris": 1600, "priority": "P1" },
+    { "model_id": "road_roller_twin", "nameVi": "Xe Lu Rung Làm Đường (Road Roller)", "category": "construction_machinery", "target_tris": 1200, "priority": "P1" },
+    { "model_id": "excavator_twin", "nameVi": "Máy Xúc Đào Đất Thủy Lực (Excavator)", "category": "construction_machinery", "target_tris": 1400, "priority": "P1" },
+    { "model_id": "bulldozer_twin", "nameVi": "Xe Ủi Đất Hạng Nặng (Bulldozer)", "category": "construction_machinery", "target_tris": 1300, "priority": "P1" },
+    { "model_id": "concrete_mixer_twin", "nameVi": "Xe Bồn Trộn Bê Tông (Concrete Mixer Truck)", "category": "construction_machinery", "target_tris": 1600, "priority": "P1" },
+    { "model_id": "plywood_stack_twin", "nameVi": "Kiện Ván Ép Cốt Pha & Gỗ Dựng (Plywood Formwork)", "category": "construction_materials", "target_tris": 240, "priority": "P1" },
+    { "model_id": "steel_coil_twin", "nameVi": "Cuộn Thép / Nhôm Công Nghiệp (Steel/Alu Coil)", "category": "construction_materials", "target_tris": 420, "priority": "P1" },
+    { "model_id": "steel_girder_stack_twin", "nameVi": "Bó Dầm Thép Chữ H / Kèo Thép (H-Beam Stack)", "category": "construction_materials", "target_tris": 360, "priority": "P1" },
+    { "model_id": "scaffolding_bay_twin", "nameVi": "Giàn Giáo Khung Thép & Lưới Bao Che Công Trình", "category": "construction_materials", "target_tris": 320, "priority": "P1" },
+    { "model_id": "traffic_light_gantry_twin", "nameVi": "Cụm Đèn Tín Hiệu Giao Thông 3 Màu & Cổng Long Môn", "category": "civil_infrastructure", "target_tris": 380, "priority": "P1" },
+    { "model_id": "highway_sign_board_twin", "nameVi": "Biển Báo Chỉ Đường Phân Khu Phản Quang", "category": "civil_infrastructure", "target_tris": 220, "priority": "P1" }
+  ]
+}
